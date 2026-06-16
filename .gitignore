@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+frontend final project/node_modules/
+frontend final project/dist/
+backend/node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+**/config.env
+backend/connection/config.env
+frontend final project/.env
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store

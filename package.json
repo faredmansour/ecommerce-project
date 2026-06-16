@@ -1,0 +1,13 @@
+{
+  "name": "alfredo-ecommerce",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E-commerce web app with Express backend and React frontend.",
+  "scripts": {
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd \"frontend final project\" && npm run dev",
+    "start": "npm run start:backend",
+    "build:frontend": "cd \"frontend final project\" && npm run build",
+    "seed": "cd backend && node seed.js"
+  }
+}

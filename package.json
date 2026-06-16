@@ -8,6 +8,7 @@
     "start:frontend": "cd \"frontend final project\" && npm run dev",
     "start": "npm run start:backend",
     "build:frontend": "cd \"frontend final project\" && npm run build",
+    "test:backend": "cd backend && npm test",
     "seed": "cd backend && node seed.js"
   }
 }

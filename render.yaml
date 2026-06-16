@@ -1,0 +1,59 @@
+# Render Blueprint — deploys the API (web service) and the SPA (static site).
+# Import this repo at https://dashboard.render.com → "New +" → "Blueprint".
+# Secret values (sync:false) are entered once in the Render dashboard.
+services:
+  - type: web
+    name: alfredo-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: DB_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: CLIENT_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+
+  - type: web
+    name: alfredo-frontend
+    runtime: static
+    rootDir: "frontend final project"
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

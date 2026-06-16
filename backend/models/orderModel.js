@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const orderItemSchema = new mongoose.Schema({
-  product: { type: mongoose.Schema.Types.ObjectId, ref: "products", required: true },
-  product_id: { type: String },
+  product: { type: mongoose.Schema.Types.ObjectId, ref: "products" },
+  product_id: { type: String, required: true },
   name: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
@@ -21,7 +21,7 @@ const orderSchema = new mongoose.Schema(
       line2: { type: String },
       city: { type: String, required: true },
       state: { type: String },
-      postalCode: { type: String, required: true },
+      postalCode: { type: String },
       country: { type: String, required: true },
     },
     coupon: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon" },

@@ -1,15 +1,19 @@
+const dotenv = require("dotenv");
+dotenv.config({ path: "./connection/config.env" });
 
-const dotenv = require("dotenv").config({ path: "./connection/config.env" });
 const express = require("express");
 const helmet = require("helmet");
+const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const cors = require("cors");
-const logger = require("./utils/logger");
-const errorHandler = require("./middlewares/errorHandler");
-const app = express();
-const port = process.env.PORT || 8000;
 const mongoose = require("mongoose");
+const swaggerUi = require("swagger-ui-express");
+
+const logger = require("./utils/logger");
+const swaggerSpec = require("./utils/swagger");
+const errorHandler = require("./middlewares/errorHandler");
+
 const productRouter = require("./routers/productRouter");
 const categoryRouter = require("./routers/categoryRouter");
 const authRouter = require("./routers/authRouter");
@@ -20,11 +24,42 @@ const addressRouter = require("./routers/addressRouter");
 const couponRouter = require("./routers/couponRouter");
 const paymentRouter = require("./routers/paymentRouter");
 const uploadRouter = require("./routers/uploadRouter");
-app.use(helmet());
-app.use(cors({ origin: "http://localhost:5173" }));
-app.use(express.json({ limit: "10kb" }));
-app.use(mongoSanitize());
 
+const app = express();
+
+// --- Security & core middleware ---
+app.use(helmet());
+app.use(compression());
+
+// CORS: allow a comma-separated list of origins from env, fall back to the dev client.
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // allow non-browser tools (curl/postman) that send no origin
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "10kb" }));
+
+// NoSQL-injection protection. Applied in place to req.body/req.params only —
+// Express 5 makes req.query read-only, so reassigning it (the library default)
+// would throw. Query strings are plain strings here, so this is sufficient.
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body, { replaceWith: "_" });
+  if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: "_" });
+  next();
+});
+
+// --- Rate limiting ---
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -41,27 +76,36 @@ const authLimiter = rateLimit({
   message: { status: "error", message: "Too many login attempts. Try again later." },
 });
 
-app.use("/api", globalLimiter);
-app.use("/api/auth", authLimiter);
-async function dbconnection (){
- try{
- await mongoose.connect(process.env.DB_URL)
- logger.info("db connection success")
- }
- catch(err){
-    logger.error(err.message);
-    process.exit(1);
- }
+// Rate limiting is disabled under test to keep the suite deterministic.
+if (process.env.NODE_ENV !== "test") {
+  app.use("/api", globalLimiter);
+  app.use("/api/auth", authLimiter);
 }
-dbconnection ()
 
+// --- Request logging ---
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
+});
+
+// --- Health check ---
+app.get("/health", (req, res) => {
+  const dbStates = ["disconnected", "connected", "connecting", "disconnecting"];
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    db: dbStates[mongoose.connection.readyState] || "unknown",
+  });
+});
+
+// --- API documentation ---
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api/docs.json", (req, res) => res.json(swaggerSpec));
+
+// --- Static uploads & routes ---
 app.use("/uploadimage", express.static("uploadimage"));
 app.use("/api", uploadRouter);
-
-app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.url} - ${new Date().toISOString()}`);
-    next();
-});
 
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
@@ -73,9 +117,7 @@ app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
 app.use("/api/payments", paymentRouter);
 
-
+// --- Error handler (last) ---
 app.use(errorHandler);
 
-app.listen(port, () => {
-    logger.info(`Server is running on port ${port}`);
-});
+module.exports = app;

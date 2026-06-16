@@ -135,6 +135,12 @@ export const couponsAPI = {
   apply: (code) => api.post("/api/coupons/apply", { code }),
 };
 
+// ─── Payments ─────────────────────────────────────────────────────────────────
+export const paymentsAPI = {
+  createIntent: (amount, currency = "usd") =>
+    api.post("/api/payments/intent", { amount, currency }),
+};
+
 // ─── Addresses ─────────────────────────────────────────────────────────────────
 export const addressesAPI = {
   getAll: () => api.get("/api/addresses"),

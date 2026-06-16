@@ -4,6 +4,9 @@ const productController = require("../controllers/productController.js");
 const reviewController = require("../controllers/reviewController.js");
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
 const { upload, handleMulterError } = require("../middlewares/multer");
+const validateRequest = require("../middlewares/validateRequest");
+const { createProductSchema, updateProductSchema } = require("../controllers/validation/productValidation");
+const { submitReviewSchema } = require("../controllers/validation/reviewValidation");
 
 /**
  * @route GET /api/products
@@ -24,7 +27,7 @@ router.get("/:id/reviews", reviewController.getReviewsForProduct);
  * @desc Create a review for a product
  * @access User
  */
-router.post("/:id/reviews", protect, reviewController.submitReview);
+router.post("/:id/reviews", protect, validateRequest(submitReviewSchema), reviewController.submitReview);
 
 /**
  * @route GET /api/products/:id
@@ -38,14 +41,30 @@ router.get("/:id", productController.getProductById);
  * @desc Create a new product with optional image upload
  * @access Admin
  */
-router.post("/", protect, restrictTo("admin"), upload.single("image"), handleMulterError, productController.createProduct);
+router.post(
+  "/",
+  protect,
+  restrictTo("admin"),
+  upload.single("image"),
+  handleMulterError,
+  validateRequest(createProductSchema),
+  productController.createProduct
+);
 
 /**
  * @route PUT /api/products/:id
  * @desc Update a product by ID
  * @access Admin
  */
-router.put("/:id", protect, restrictTo("admin"), upload.single("image"), handleMulterError, productController.updateProduct);
+router.put(
+  "/:id",
+  protect,
+  restrictTo("admin"),
+  upload.single("image"),
+  handleMulterError,
+  validateRequest(updateProductSchema),
+  productController.updateProduct
+);
 
 /**
  * @route DELETE /api/products/:id

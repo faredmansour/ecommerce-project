@@ -20,7 +20,10 @@ const connectRedis = async () => {
   }
 };
 
+const isReady = () => client.isOpen;
+
 const getCache = async (key) => {
+  if (!client.isOpen) return null;
   try {
     const raw = await client.get(key);
     return raw ? JSON.parse(raw) : null;
@@ -31,6 +34,7 @@ const getCache = async (key) => {
 };
 
 const setCache = async (key, value, ttl = 300) => {
+  if (!client.isOpen) return;
   try {
     await client.set(key, JSON.stringify(value), { EX: ttl });
   } catch (err) {
@@ -39,6 +43,7 @@ const setCache = async (key, value, ttl = 300) => {
 };
 
 const invalidateCacheByPattern = async (pattern) => {
+  if (!client.isOpen) return;
   try {
     const keys = [];
     for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
@@ -55,6 +60,7 @@ const invalidateCacheByPattern = async (pattern) => {
 module.exports = {
   client,
   connectRedis,
+  isReady,
   getCache,
   setCache,
   invalidateCacheByPattern,

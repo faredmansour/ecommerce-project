@@ -3,7 +3,7 @@ const Product = require("../models/productModel");
 
 const getReviewsForProduct = async (req, res) => {
   try {
-    const reviews = await Review.find({ product: req.params.productId }).populate("user", "name");
+    const reviews = await Review.find({ product: req.params.id }).populate("user", "name");
     res.status(200).json({ status: "success", data: reviews });
   } catch (err) {
     res.status(500).json({ status: "error", message: err.message });
@@ -19,7 +19,7 @@ const submitReview = async (req, res) => {
 
     const review = await Review.create({
       user: req.user.id,
-      product: req.params.productId,
+      product: req.params.id,
       rating,
       title,
       comment,

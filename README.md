@@ -1,90 +1,153 @@
-# Alfredo E-commerce Project
+# Alfredo E-Commerce
 
-A full-stack e-commerce application with an Express/MongoDB backend and a React/Vite frontend.
+A full-stack e-commerce application: an **Express 5 / MongoDB** REST API and a **React (Vite) + Tailwind** single-page front end.
+
+[![Node CI](https://github.com/faredmansour/ecommerce-project/actions/workflows/nodejs-ci.yml/badge.svg)](https://github.com/faredmansour/ecommerce-project/actions)
+
+## Features
+
+**Backend**
+- JWT auth with **access + refresh tokens**, logout (token revocation), and email-based password reset
+- Role-based access control (`user` / `admin`)
+- Products with **pagination, search, sort, and category filtering**
+- Cart, Wishlist, Orders (with coupon discounts), Reviews & ratings, Addresses (default address)
+- **Stripe** payment intents
+- Security: Helmet, CORS allow-list, rate limiting (global + auth), NoSQL-injection sanitization
+- Performance: gzip compression, optional **Redis** response caching, optional **Cloudinary** image hosting
+- **Joi** request validation on every write endpoint
+- **Swagger / OpenAPI** docs at `/api/docs`
+- `/health` liveness endpoint
+- Winston structured logging
+- **Jest + Supertest** test suite (in-memory MongoDB)
+
+**Frontend**
+- Product browsing, product detail with reviews, cart, wishlist
+- **Full checkout flow**: address selection, coupon apply, Stripe card payment or Cash on Delivery
+- Admin dashboard
+- Dark mode
 
 ## Project Structure
 
-- `backend/` — Express API, MongoDB models, authentication, admin routes, product and category management.
-- `frontend final project/` — React app built with Vite, product browsing, cart, wishlist, authentication.
+```
+ecommerce-project/
+├── backend/                 # Express API
+│   ├── app.js               # Express app (middleware, routes) — exported, no listen
+│   ├── server.js            # Entry point: DB connect + listen
+│   ├── controllers/         # Route handlers + validation/ (Joi schemas)
+│   ├── models/              # Mongoose models
+│   ├── routers/             # Express routers
+│   ├── middlewares/         # auth, RBAC, validateRequest, error handler, multer
+│   ├── utils/               # logger, cache (Redis), cloudinary, email, swagger
+│   └── tests/               # Jest + Supertest
+├── frontend final project/  # React + Vite SPA
+├── render.yaml              # One-click Render deployment blueprint
+└── .github/workflows/       # CI
+```
 
 ## Getting Started
 
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+
 ### Backend
-1. Open terminal in `backend/`
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create `backend/connection/config.env` with:
-   ```env
-   PORT=8000
-   DB_URL="mongodb://127.0.0.1:27017/e-comerce1"
-   JWT_SECRET=mySuperSecretKey123
-   JWT_EXPIRES_IN=7d
-   ```
-4. Run backend server:
-   ```bash
-   npm run dev
-   ```
+```bash
+cd backend
+npm install
+cp connection/config.env.example connection/config.env   # then fill in values
+npm run dev        # nodemon
+# or: npm start
+```
+
+The API runs at `http://localhost:8000`. Interactive docs: `http://localhost:8000/api/docs`.
+
+See [`backend/connection/config.env.example`](backend/connection/config.env.example) for all environment variables. Only `DB_URL` and `JWT_SECRET` are required; Redis, Stripe, Cloudinary and SMTP are optional and degrade gracefully when unset.
 
 ### Frontend
-1. Open terminal in `frontend final project/`
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run frontend server:
-   ```bash
-   npm run dev
-   ```
-
-### From project root
-Install the backend and frontend independently, then use these convenience scripts:
 ```bash
-npm run start:backend
-npm run start:frontend
-npm run build:frontend
-npm run seed
+cd "frontend final project"
+npm install
+cp .env.example .env        # set VITE_API_URL and optional VITE_STRIPE_PUBLISHABLE_KEY
+npm run dev
+```
+
+The app runs at `http://localhost:5173`.
+
+### Seed sample data
+```bash
+cd backend && node seed.js     # or, from root: npm run seed
+```
+
+## Testing
+```bash
+cd backend
+npm test
+```
+Tests spin up an in-memory MongoDB (no external database needed). The first run downloads the MongoDB binary once and caches it.
+
+## Deployment
+
+### Render (blueprint)
+This repo includes [`render.yaml`](render.yaml). In the Render dashboard choose **New + → Blueprint**, point it at this repo, and fill in the secret env vars (`DB_URL`, `STRIPE_SECRET_KEY`, etc.). It provisions the API as a web service and the front end as a static site.
+
+### Docker (backend)
+```bash
+cd backend
+docker build -t alfredo-api .
+docker run -p 8000:8000 --env-file connection/config.env alfredo-api
 ```
 
 ## API Endpoints
 
-### Auth
-- `POST /api/auth/register` — Register a new user
-- `POST /api/auth/login` — Login and receive JWT token
+Base URL: `/api`. Full schemas and try-it-out at **`/api/docs`**.
 
-### Categories
-- `GET /api/categories` — Get all categories
-- `GET /api/categories/:id` — Get category by ID
-- `POST /api/categories` — Create category (admin)
-- `PUT /api/categories/:id` — Update category (admin)
-- `DELETE /api/categories/:id` — Delete category (admin)
+### Auth (`/api/auth`)
+| Method | Path | Access | Description |
+|---|---|---|---|
+| POST | `/register` | public | Register, returns access + refresh tokens |
+| POST | `/login` | public | Login |
+| POST | `/refresh` | public | Exchange refresh token for a new access token |
+| POST | `/logout` | public | Revoke a refresh token |
+| POST | `/forgot-password` | public | Request password-reset email |
+| POST | `/reset-password` | public | Reset password with token |
+| GET | `/me` | auth | Current user |
 
-### Products
-- `GET /api/products` — Get all products
-- `GET /api/products/:id` — Get product by ID
-- `POST /api/products` — Create product with image upload (admin)
-- `PUT /api/products/:id` — Update product (admin)
-- `DELETE /api/products/:id` — Delete product (admin)
+### Products (`/api/products`)
+| Method | Path | Access | Description |
+|---|---|---|---|
+| GET | `/` | public | List (`?category=&search=&sort=&page=&limit=`) |
+| GET | `/:id` | public | Get one |
+| POST | `/` | admin | Create (multipart image) |
+| PUT | `/:id` | admin | Update |
+| DELETE | `/:id` | admin | Delete |
+| GET | `/:id/reviews` | public | List reviews |
+| POST | `/:id/reviews` | auth | Submit review |
 
-## Notes
-- `backend/connection/config.env` is excluded from Git with `.gitignore`.
-- The frontend folder currently remains named `frontend final project` to preserve the existing structure.
+### Categories (`/api/categories`)
+`GET /`, `GET /:id` (public); `POST /`, `PUT /:id`, `DELETE /:id` (admin).
 
-## Recommended Improvements
-- Rename frontend folder to `frontend` and standardize paths.
-- Add pain-free deployment scripts and GitHub Actions for CI.
-- Add unit and integration tests for backend and frontend.
+### Cart (`/api/cart`) — auth
+`GET /`, `POST /`, `PATCH /:id`, `DELETE /:id`.
 
-## GitHub Setup
-1. Initialize git at root:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial project setup"
-   ```
-2. Create a GitHub repo and push:
-   ```bash
-   git remote add origin <repository-url>
-   git push -u origin main
-   ```
+### Wishlist (`/api/wishlist`) — auth
+`GET /`, `POST /`, `DELETE /:productId`.
+
+### Orders (`/api/orders`) — auth
+`GET /`, `GET /:id`, `POST /`; `PATCH /:id/status` (admin).
+
+### Addresses (`/api/addresses`) — auth
+`GET /`, `POST /`, `PUT /:id`, `DELETE /:id`.
+
+### Coupons (`/api/coupons`) — auth
+`POST /apply`.
+
+### Payments (`/api/payments`) — auth
+`POST /intent` — create a Stripe payment intent.
+
+### Misc
+`GET /health`, `POST /api/upload`, `GET /api/docs`.
+
+A Postman collection is available at [`backend/Alfredo_API.postman_collection.json`](backend/Alfredo_API.postman_collection.json).
+
+## License
+MIT

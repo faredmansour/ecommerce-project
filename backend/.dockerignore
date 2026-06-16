@@ -1,0 +1,8 @@
+node_modules
+logs
+*.log
+connection/config.env
+uploadimage
+tests
+warmup-mongo.js
+.git

@@ -1,5 +1,30 @@
 const Products = require("../models/productModel");
 const fs = require("fs");
+const { getCache, setCache, invalidateCacheByPattern } = require("../utils/cache");
+const cloudinary = require("../utils/cloudinary");
+
+const PRODUCTS_CACHE_PREFIX = "products:";
+
+// Resolve the stored image path for an uploaded file. When Cloudinary is
+// configured the local temp file is pushed to the cloud and removed; otherwise
+// the locally-served path is used.
+const resolveImage = async (file) => {
+  if (!file) return null;
+
+  if (cloudinary.isConfigured()) {
+    try {
+      const buffer = fs.readFileSync(file.path);
+      const result = await cloudinary.uploadToCloudinary(buffer, file.filename);
+      fs.unlink(file.path, () => {});
+      return result.secure_url;
+    } catch (err) {
+      // Fall back to the local file if the upload fails.
+      return `/uploadimage/${file.filename}`;
+    }
+  }
+
+  return `/uploadimage/${file.filename}`;
+};
 
 const getProducts = async (req, res) => {
   try {
@@ -27,6 +52,10 @@ const getProducts = async (req, res) => {
     const pageSize = Math.max(1, parseInt(limit, 10) || 12);
     const sortQuery = sortOptions[sort] || { createdAt: -1 };
 
+    const cacheKey = `${PRODUCTS_CACHE_PREFIX}list:${JSON.stringify({ category, search, sort, pageNumber, pageSize })}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.status(200).json(cached);
+
     const total = await Products.countDocuments(filter);
     const products = await Products.find(filter)
       .populate("category", "name description")
@@ -34,7 +63,7 @@ const getProducts = async (req, res) => {
       .skip((pageNumber - 1) * pageSize)
       .limit(pageSize);
 
-    res.status(200).json({
+    const payload = {
       success: true,
       count: products.length,
       total,
@@ -42,7 +71,10 @@ const getProducts = async (req, res) => {
       limit: pageSize,
       pages: Math.ceil(total / pageSize),
       products,
-    });
+    };
+
+    await setCache(cacheKey, payload, 120);
+    res.status(200).json(payload);
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
@@ -61,8 +93,7 @@ const getProductById = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const { name, description, price, category, stock } = req.body;
-
-    const image = req.file ? `/uploadimage/${req.file.filename}` : null;
+    const image = await resolveImage(req.file);
 
     const product = await Products.create({
       name,
@@ -74,6 +105,7 @@ const createProduct = async (req, res) => {
     });
 
     await product.populate("category", "name description");
+    await invalidateCacheByPattern(`${PRODUCTS_CACHE_PREFIX}*`);
 
     res.status(201).json({ success: true, product });
   } catch (err) {
@@ -91,18 +123,22 @@ const updateProduct = async (req, res) => {
 
     if (req.file) {
       const oldProduct = await Products.findById(req.params.id);
-      if (oldProduct?.image) {
+      if (oldProduct?.image && oldProduct.image.startsWith("/uploadimage/")) {
         const oldPath = `.${oldProduct.image}`;
         if (fs.existsSync(oldPath)) fs.unlink(oldPath, () => {});
       }
-      updateData.image = `/uploadimage/${req.file.filename}`;
+      updateData.image = await resolveImage(req.file);
     }
+
+    // Drop undefined keys so a partial update doesn't overwrite fields with null.
+    Object.keys(updateData).forEach((k) => updateData[k] === undefined && delete updateData[k]);
 
     const product = await Products.findByIdAndUpdate(req.params.id, updateData, { new: true })
       .populate("category", "name description");
 
     if (!product) return res.status(404).json({ message: "Product not found" });
 
+    await invalidateCacheByPattern(`${PRODUCTS_CACHE_PREFIX}*`);
     res.status(200).json({ success: true, product });
   } catch (err) {
     if (req.file) fs.unlink(req.file.path, () => {});
@@ -115,11 +151,12 @@ const deleteProduct = async (req, res) => {
     const product = await Products.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    if (product.image) {
+    if (product.image && product.image.startsWith("/uploadimage/")) {
       const imgPath = `.${product.image}`;
       if (fs.existsSync(imgPath)) fs.unlink(imgPath, () => {});
     }
 
+    await invalidateCacheByPattern(`${PRODUCTS_CACHE_PREFIX}*`);
     res.status(200).json({ success: true, message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err.message });

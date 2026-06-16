@@ -10,6 +10,8 @@ import RegisterPage from "./pages/RegisterPage";
 import CategoryPage from "./pages/CategoryPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrderSuccessPage from "./pages/OrderSuccessPage";
 import WishlistPage from "./pages/WishlistPage";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -54,6 +56,22 @@ function App() {
             <Route path="/category" element={<CategoryPage />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order-success/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderSuccessPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route
               path="/admin"

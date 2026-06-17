@@ -39,7 +39,7 @@ ecommerce-project/
 │   ├── middlewares/         # auth, RBAC, validateRequest, error handler, multer
 │   ├── utils/               # logger, cache (Redis), cloudinary, email, swagger
 │   └── tests/               # Jest + Supertest
-├── frontend final project/  # React + Vite SPA
+├── frontend/                # React + Vite SPA
 ├── render.yaml              # One-click Render deployment blueprint
 └── .github/workflows/       # CI
 ```
@@ -65,7 +65,7 @@ See [`backend/connection/config.env.example`](backend/connection/config.env.exam
 
 ### Frontend
 ```bash
-cd "frontend final project"
+cd frontend
 npm install
 cp .env.example .env        # set VITE_API_URL and optional VITE_STRIPE_PUBLISHABLE_KEY
 npm run dev

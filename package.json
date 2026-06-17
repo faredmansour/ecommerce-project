@@ -5,9 +5,9 @@
   "description": "E-commerce web app with Express backend and React frontend.",
   "scripts": {
     "start:backend": "cd backend && npm run dev",
-    "start:frontend": "cd \"frontend final project\" && npm run dev",
+    "start:frontend": "cd frontend && npm run dev",
     "start": "npm run start:backend",
-    "build:frontend": "cd \"frontend final project\" && npm run build",
+    "build:frontend": "cd frontend && npm run build",
     "test:backend": "cd backend && npm test",
     "seed": "cd backend && node seed.js"
   }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Mail, Lock, Eye, EyeOff, User as UserIcon, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User as UserIcon, ArrowRight, ShieldCheck } from "lucide-react";
 import BrandLogo from "../components/BrandLogo";
 import { siteConfig } from "../config/site.config";
 
@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,8 +31,8 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await register(name, email, password);
-      navigate("/home");
+      await register(name, email, password, role);
+      navigate(role === "admin" ? "/admin" : "/home");
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.detail || "Registration failed.");
     } finally {
@@ -86,6 +87,13 @@ export default function RegisterPage() {
             <div className="relative">
               <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" required autoComplete="new-password" className={inputCls} />
+            </div>
+            <div className="relative">
+              <ShieldCheck size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputCls} appearance-none`}>
+                <option value="user">User account</option>
+                <option value="admin">Admin account</option>
+              </select>
             </div>
 
             <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 bg-brand text-brand-fg rounded-full font-semibold hover:opacity-90 active:scale-[0.99] transition disabled:opacity-60">

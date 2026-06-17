@@ -15,9 +15,33 @@ function getCategoryName(category) {
 }
 
 function getImageUrl(image) {
-  if (!image) return "/placeholder.png";
-  if (image.startsWith("http")) return image;
+  if (!image) return "";
+  if (image.startsWith("http") || image.startsWith("data:")) return image;
   return `${BACKEND}${image}`;
+}
+
+function getFallbackImage(name = "Product") {
+  const label = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="720" height="720" viewBox="0 0 720 720">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop stop-color="#f5c451"/>
+          <stop offset="1" stop-color="#18181b"/>
+        </linearGradient>
+      </defs>
+      <rect width="720" height="720" fill="url(#g)"/>
+      <circle cx="528" cy="160" r="146" fill="rgba(255,255,255,.16)"/>
+      <rect x="138" y="450" width="444" height="78" rx="26" fill="rgba(255,255,255,.24)"/>
+      <text x="360" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="150" font-weight="700" fill="#fff">${label || "P"}</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 export default function ProductDetailPage() {
@@ -121,10 +145,10 @@ export default function ProductDetailPage() {
         {/* Image */}
         <div className="relative bg-zinc-100 dark:bg-zinc-800 rounded-2xl overflow-hidden aspect-square border border-zinc-200 dark:border-zinc-800">
           <img
-            src={getImageUrl(product.image)}
+            src={getImageUrl(product.image) || getFallbackImage(product.name)}
             alt={product.name}
             className="w-full h-full object-cover"
-            onError={(e) => { e.target.src = "/placeholder.png"; }}
+            onError={(e) => { e.target.src = getFallbackImage(product.name); }}
           />
           {discount > 0 && (
             <span className="absolute top-4 left-4 bg-gold text-gold-fg text-sm font-bold px-3 py-1 rounded-full nums">-{discount}%</span>

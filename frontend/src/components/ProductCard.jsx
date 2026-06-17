@@ -15,9 +15,33 @@ function getCategoryName(category) {
 }
 
 function getImageUrl(image) {
-  if (!image) return "/placeholder.png";
-  if (image.startsWith("http")) return image;
+  if (!image) return "";
+  if (image.startsWith("http") || image.startsWith("data:")) return image;
   return `${BACKEND}${image}`;
+}
+
+function getFallbackImage(name = "Product") {
+  const label = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop stop-color="#f5c451"/>
+          <stop offset="1" stop-color="#18181b"/>
+        </linearGradient>
+      </defs>
+      <rect width="480" height="480" fill="url(#g)"/>
+      <circle cx="356" cy="108" r="98" fill="rgba(255,255,255,.16)"/>
+      <rect x="92" y="300" width="296" height="52" rx="18" fill="rgba(255,255,255,.24)"/>
+      <text x="240" y="248" text-anchor="middle" font-family="Arial, sans-serif" font-size="104" font-weight="700" fill="#fff">${label || "P"}</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 export default function ProductCard({ product }) {
@@ -27,7 +51,7 @@ export default function ProductCard({ product }) {
 
   const productId = product._id || product.id;
   const categoryName = getCategoryName(product.category);
-  const imageUrl = getImageUrl(product.image);
+  const imageUrl = getImageUrl(product.image) || getFallbackImage(product.name);
   const rating = Math.round(product.rating || 0);
 
   const discount = product.original_price
@@ -79,7 +103,7 @@ export default function ProductCard({ product }) {
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => { e.target.src = "/placeholder.png"; }}
+          onError={(e) => { e.target.src = getFallbackImage(product.name); }}
         />
         {discount > 0 && (
           <span className="absolute top-2.5 left-2.5 bg-gold text-gold-fg text-xs font-bold px-2 py-1 rounded-full nums">

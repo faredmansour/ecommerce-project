@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 import { cartAPI } from "../services/api";
 
 const CartContext = createContext(undefined);
@@ -6,24 +7,41 @@ const CartContext = createContext(undefined);
 export function CartProvider({ children }) {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState([]);
+  const { isAuthenticated, loading } = useAuth();
 
-  const refreshCart = async () => {
+  const clearCart = useCallback(() => {
+    setItems([]);
+    setCount(0);
+  }, []);
+
+  const refreshCart = useCallback(async () => {
+    if (!isAuthenticated) {
+      clearCart();
+      return;
+    }
+
     try {
       const res = await cartAPI.getAll();
       const data = res.data.data || [];
       setItems(data);
       setCount(data.reduce((sum, item) => sum + (item.quantity || 0), 0));
     } catch (err) {
-      setItems([]);
-      setCount(0);
+      clearCart();
     }
-  };
+  }, [clearCart, isAuthenticated]);
 
   useEffect(() => {
+    if (loading) return;
+
+    if (!isAuthenticated) {
+      clearCart();
+      return;
+    }
+
     refreshCart();
     const unsubscribe = cartAPI.subscribe(refreshCart);
     return () => unsubscribe();
-  }, []);
+  }, [clearCart, isAuthenticated, loading, refreshCart]);
 
   return (
     <CartContext.Provider value={{ items, count, refreshCart }}>

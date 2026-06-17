@@ -13,6 +13,7 @@ export default function CategoryPage() {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState("default");
 
   useEffect(() => {
@@ -38,10 +39,14 @@ export default function CategoryPage() {
 
   useEffect(() => {
     setLoading(true);
+    setError("");
     productsAPI
       .getAll(activeCategory?._id || undefined, searchQuery || undefined)
       .then((res) => setProducts(res.data))
-      .catch(() => {})
+      .catch((err) => {
+        setProducts([]);
+        setError(err.response?.data?.message || "Could not load products.");
+      })
       .finally(() => setLoading(false));
   }, [activeCategory, searchQuery]);
 
@@ -128,6 +133,11 @@ export default function CategoryPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-20 rounded-2xl border border-dashed border-red-300 dark:border-red-900">
+              <p className="text-red-600 dark:text-red-400 text-lg font-medium">{error}</p>
+              <p className="text-zinc-400 text-sm mt-1">Refresh the page or try again in a moment.</p>
             </div>
           ) : sortedProducts.length === 0 ? (
             <div className="text-center py-20 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">

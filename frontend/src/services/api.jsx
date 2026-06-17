@@ -31,8 +31,8 @@ api.interceptors.response.use(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 // Backend returns: { message, token, user: { id, name, email, role } }
 export const authAPI = {
-  register: (name, email, password) =>
-    api.post("/api/auth/register", { name, email, password }),
+  register: (name, email, password, role = "user") =>
+    api.post("/api/auth/register", { name, email, password, role }),
 
   login: (email, password) =>
     api.post("/api/auth/login", { email, password }),
@@ -44,15 +44,27 @@ export const authAPI = {
 // Backend returns: { success, count, products: [...] }
 // We normalise so callers receive { data: [...] }
 export const productsAPI = {
-  getAll: (category, search) =>
+  getAll: (category, search, params = {}) =>
     api
-      .get("/api/products", { params: { category, search } })
+      .get("/api/products", { params: { category, search, ...params } })
       .then((res) => ({ data: res.data.products ?? res.data })),
 
   getById: (id) =>
     api
       .get(`/api/products/${id}`)
       .then((res) => ({ data: res.data.product ?? res.data })),
+
+  create: (productData) =>
+    api.post("/api/products", productData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  update: (id, productData) =>
+    api.put(`/api/products/${id}`, productData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  remove: (id) => api.delete(`/api/products/${id}`),
 };
 
 // ─── Categories ──────────────────────────────────────────────────────────────
@@ -72,6 +84,8 @@ export const categoriesAPI = {
       }),
 
   getAllRaw: () => api.get("/api/categories"),
+
+  create: (name, description) => api.post("/api/categories", { name, description }),
 };
 
 // ─── Cart ───────────────────────────────────────────────────────────────────
@@ -122,6 +136,10 @@ export const ordersAPI = {
   getById: (id) => api.get(`/api/orders/${id}`),
   create: (orderData) => api.post("/api/orders", orderData),
   updateStatus: (orderId, status) => api.patch(`/api/orders/${orderId}/status`, { status }),
+};
+
+export const adminAPI = {
+  getSummary: () => api.get("/api/admin/summary"),
 };
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────

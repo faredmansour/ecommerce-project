@@ -24,6 +24,7 @@ const addressRouter = require("./routers/addressRouter");
 const couponRouter = require("./routers/couponRouter");
 const paymentRouter = require("./routers/paymentRouter");
 const uploadRouter = require("./routers/uploadRouter");
+const adminRouter = require("./routers/adminRouter");
 
 const app = express();
 
@@ -76,8 +77,9 @@ const authLimiter = rateLimit({
   message: { status: "error", message: "Too many login attempts. Try again later." },
 });
 
-// Rate limiting is disabled under test to keep the suite deterministic.
-if (process.env.NODE_ENV !== "test") {
+// Rate limiting should protect production traffic without blocking local dev while
+// Vite/React refreshes and dashboard polling create many quick requests.
+if (process.env.NODE_ENV === "production") {
   app.use("/api", globalLimiter);
   app.use("/api/auth", authLimiter);
 }
@@ -116,6 +118,7 @@ app.use("/api/orders", ordersRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/admin", adminRouter);
 
 // --- Error handler (last) ---
 app.use(errorHandler);

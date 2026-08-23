@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  fronend:
+    build:
+      context: ./fronend
+      dockerfile: Dockerfile
+      args:
+       - VITE_API_URL=http://localhost:8000/api
+    Container_Name: fronend
+    restart: always
+    Ports:
+     - "3000:80"
+    depends_on:
+      - backend
+  backend:
+   build:
+    context: ./backend
+    dockerfile: Dockerfile
+  
+   Container_Name: backend
+   restat: always
+   ports: 
+    - "8000:8000"
+   environment:
+    - NODE_ENV-production
+    - PORT=8000
+    - JWT_SECRET=${JWT_SECRET}
+    - DB_URL=${DB_URL}
+    - REDIS_URL=redis://cache:6379
+
+   depends_on:
+    - cache
+
+
+  cache:
+   image: redis:7-alpine
+   Container_Name: alfredo-redis
+   restart: always
+   ports: 
+    - "6379:6379"
+   volumes:
+     -redis_data:/redis_data
+
+volumes:
+ redis-data:
+   driver: local
+
+
+
+
+
+
+
+  
+
+
+

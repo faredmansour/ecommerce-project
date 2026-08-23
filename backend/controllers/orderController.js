@@ -27,6 +27,10 @@ const getOrderById = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({ status: "fail", message: "Admins cannot place orders." });
+    }
+
     const { items, shippingAddress, couponCode, paymentMethod, totalAmount } = req.body;
     if (!items || !items.length) {
       return res.status(400).json({ status: "fail", message: "Order items are required" });

@@ -23,7 +23,8 @@ A full-stack e-commerce application: an **Express 5 / MongoDB** REST API and a *
 **Frontend**
 - Product browsing, product detail with reviews, cart, wishlist
 - **Full checkout flow**: address selection, coupon apply, Stripe card payment or Cash on Delivery
-- Admin dashboard
+- Rich homepage search, featured sections, and polished category browsing
+- Admin dashboard with inventory alerts, pending orders, and top-selling insights
 - Dark mode
 
 ## Project Structure
@@ -72,6 +73,14 @@ npm run dev
 ```
 
 The app runs at `http://localhost:5173`.
+
+### Run both services together
+From the project root you can now start the full stack with a single command:
+```bash
+npm install
+npm run dev
+```
+This launches the backend and frontend in parallel.
 
 ### Seed sample data
 ```bash

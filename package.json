@@ -4,11 +4,17 @@
   "private": true,
   "description": "E-commerce web app with Express backend and React frontend.",
   "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "start:backend": "cd backend && npm run dev",
     "start:frontend": "cd frontend && npm run dev",
     "start": "npm run start:backend",
     "build:frontend": "cd frontend && npm run build",
     "test:backend": "cd backend && npm test",
     "seed": "cd backend && node seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
   }
 }

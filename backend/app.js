@@ -29,8 +29,14 @@ const adminRouter = require("./routers/adminRouter");
 const app = express();
 
 // --- Security & core middleware ---
+app.disable("x-powered-by");
 app.use(helmet());
 app.use(compression());
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 
 // CORS: allow a comma-separated list of origins from env, fall back to the dev client.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")

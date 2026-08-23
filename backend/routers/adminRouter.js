@@ -5,5 +5,6 @@ const adminController = require("../controllers/adminController");
 
 router.use(protect, restrictTo("admin"));
 router.get("/summary", adminController.getDashboardSummary);
+router.get("/analytics", adminController.getAnalytics);
 
 module.exports = router;

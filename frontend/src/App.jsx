@@ -13,6 +13,8 @@ import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import WishlistPage from "./pages/WishlistPage";
+import OrdersPage from "./pages/OrdersPage";
+import AccountPage from "./pages/AccountPage";
 import AdminDashboard from "./pages/AdminDashboard";
 
 function Layout() {
@@ -73,6 +75,22 @@ function App() {
               }
             />
             <Route path="/wishlist" element={<WishlistPage />} />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin"
               element={

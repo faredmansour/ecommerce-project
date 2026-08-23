@@ -179,6 +179,8 @@ export default function Header() {
               <NavLink to="/category">All Products</NavLink>
               <NavLink to="/cart">My Cart</NavLink>
               <NavLink to="/wishlist">Wishlist</NavLink>
+              <NavLink to="/orders">My Orders</NavLink>
+              <NavLink to="/account">Account</NavLink>
             </nav>
           </div>
           <a

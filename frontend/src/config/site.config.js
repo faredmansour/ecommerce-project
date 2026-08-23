@@ -1,60 +1,46 @@
-/**
- * ──────────────────────────────────────────────────────────────────────────
- *  STORE CONFIG — single source of truth for branding.
- *  Rebrand the whole template from here: name, logo, currency, hero, nav,
- *  footer, contact and feature highlights. Change the color theme in
- *  src/index.css (the --color-* CSS variables).
- * ──────────────────────────────────────────────────────────────────────────
- */
 export const siteConfig = {
   brand: {
     name: "ALFREDO",
-    // Short mark shown in the logo badge (1–2 letters) when no logo image is set.
     logoText: "A",
-    // Optional logo image URL (place in /public). Leave empty to use the text badge.
     logoSrc: "",
-    tagline: "Quality products at great prices.",
+    tagline: "منتجات عالية الجودة بأفضل الأسعار",
   },
 
-  // Currency formatting used across the whole storefront.
+  // العملة: يمكنك إبقاؤها USD أو تحويلها لـ EGP / SAR حسب السوق المستهدف
   currency: {
     code: "USD",
     locale: "en-US",
   },
 
-  // Free-shipping threshold (in currency units). Set to 0 to disable.
   freeShippingThreshold: 50,
   shippingFee: 5.99,
 
   announcement: {
     enabled: true,
-    text: "Free shipping on orders over $50 · 30-day easy returns",
+    text: "شحن مجاني للطلبات لأكثر من $50 · إمكانية الإرجاع خلال 30 يومًا",
   },
 
   hero: {
-    eyebrow: "New Season",
-    title: "Discover products you'll love",
-    subtitle:
-      "Curated quality across every category — shop the latest with fast delivery and easy returns.",
-    ctaLabel: "Shop Now",
+    eyebrow: "تشكيلة جديدة",
+    title: "اكتشف منتجاتك المفضلة اليوم",
+    subtitle: "جودة ممتازة في جميع التصنيفات — تسوق أحدث المنتجات مع شحن سريع وتجربة تسوق آمنة.",
+    ctaLabel: "تسوق الآن",
     ctaHref: "/category",
-    secondaryCtaLabel: "Browse Categories",
-    // Hero image lives in /public.
+    secondaryCtaLabel: "تصفح التصنيفات",
     image: "/Widgets.png",
   },
 
-  // Trust/feature highlights shown on the home page.
   features: [
-    { icon: "Truck", title: "Free Shipping", subtitle: "On orders over $50" },
-    { icon: "ShieldCheck", title: "Secure Payment", subtitle: "100% protected" },
-    { icon: "RefreshCw", title: "Easy Returns", subtitle: "30-day policy" },
-    { icon: "Headphones", title: "24/7 Support", subtitle: "Dedicated team" },
+    { icon: "Truck", title: "شحن مجاني", subtitle: "للطلبات فوق $50" },
+    { icon: "ShieldCheck", title: "دفع آمن", subtitle: "حماية بنسبة 100%" },
+    { icon: "RefreshCw", title: "إرجاع سهل", subtitle: "سياسة إرجاع 30 يومًا" },
+    { icon: "Headphones", title: "دعم 24/7", subtitle: "فريق جاهز للمساعدة" },
   ],
 
   contact: {
-    phone: "+1-202-555-0104",
+    phone: "+20 100 000 0000",
     email: "support@alfredo.com",
-    address: "123 Commerce St, New York",
+    address: "القاهرة، مصر",
   },
 
   social: {
@@ -65,14 +51,14 @@ export const siteConfig = {
 
   footer: {
     quickLinks: [
-      { label: "Home", href: "/home" },
-      { label: "All Products", href: "/category" },
-      { label: "Cart", href: "/cart" },
-      { label: "Wishlist", href: "/wishlist" },
+      { label: "الرئيسية", href: "/home" },
+      { label: "جميع المنتجات", href: "/category" },
+      { label: "سلة المشتريات", href: "/cart" },
+      { label: "المفضلة", href: "/wishlist" },
     ],
     accountLinks: [
-      { label: "Login", href: "/login" },
-      { label: "Register", href: "/register" },
+      { label: "تسجيل الدخول", href: "/login" },
+      { label: "إنشاء حساب", href: "/register" },
     ],
   },
 };

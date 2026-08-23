@@ -141,6 +141,7 @@ export const ordersAPI = {
 
 export const adminAPI = {
   getSummary: () => api.get("/api/admin/summary"),
+  getAnalytics: () => api.get("/api/admin/analytics"),
 };
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────

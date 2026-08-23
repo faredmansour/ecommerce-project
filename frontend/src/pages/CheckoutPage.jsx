@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { CreditCard, Truck, Tag, Loader2 } from "lucide-react";
+import { CreditCard, Truck, Tag, Loader2, ShieldCheck, CircleCheckBig } from "lucide-react";
 import { cartAPI, addressesAPI, couponsAPI, ordersAPI, paymentsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -174,14 +174,28 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Checkout</h1>
+      <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-card dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-full bg-gold/15 px-3 py-1 text-sm font-semibold text-gold">Step 1 of 2</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Checkout</h1>
+        </div>
+        <p className="mt-2 text-sm text-zinc-500">Complete your shipping details, choose a payment method, and confirm your order in minutes.</p>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left: address + payment */}
         <div className="lg:col-span-2 space-y-6">
           {/* Shipping address */}
           <section className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Shipping Address</h2>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Shipping Address</h2>
+                <p className="text-sm text-zinc-500">We’ll deliver your items to this address.</p>
+              </div>
+              <div className="rounded-full bg-gold/10 p-2 text-gold">
+                <Truck size={16} />
+              </div>
+            </div>
 
             {addresses.length > 0 && (
               <div className="mb-4 space-y-2">
@@ -226,7 +240,15 @@ export default function CheckoutPage() {
 
           {/* Payment method */}
           <section className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Payment</h2>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Payment</h2>
+                <p className="text-sm text-zinc-500">Choose the option that suits you best.</p>
+              </div>
+              <div className="rounded-full bg-gold/10 p-2 text-gold">
+                <ShieldCheck size={16} />
+              </div>
+            </div>
 
             <div className="space-y-2 mb-4">
               {stripeEnabled && (
@@ -276,6 +298,14 @@ export default function CheckoutPage() {
         {/* Right: order summary */}
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-6 h-fit">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Order Summary</h2>
+
+          <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-800 dark:bg-zinc-800/40">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-gray-900 dark:text-white">Estimated delivery</span>
+              <span className="text-gold">2–4 business days</span>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">Free shipping on orders above {formatPrice(SHIPPING_THRESHOLD)}.</p>
+          </div>
 
           <div className="space-y-2 mb-4 max-h-48 overflow-auto">
             {items.map((i) => (

@@ -176,6 +176,16 @@ export default function ProductDetailPage() {
             )}
           </div>
 
+          <div className="mb-6 flex flex-wrap gap-2">
+            {product.stock > 0 ? (
+              <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700 dark:bg-green-950/40 dark:text-green-400">In stock</span>
+            ) : (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">Out of stock</span>
+            )}
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{product.stock || 0} available</span>
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">Fast delivery</span>
+          </div>
+
           <p className="text-zinc-600 dark:text-zinc-300 mb-8 leading-relaxed">{product.description}</p>
 
           {/* Quantity */}

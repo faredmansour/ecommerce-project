@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   BarChart3,
   Box,
+  Clock3,
   ImagePlus,
   PackageCheck,
   Pencil,
@@ -77,9 +78,16 @@ const getFallbackImage = (name = "Product") => {
 
 export default function AdminDashboard() {
   const [summary, setSummary] = useState({
-    totals: { products: 0, categories: 0, users: 0, orders: 0, revenue: 0, itemsSold: 0 },
+    totals: { products: 0, categories: 0, users: 0, orders: 0, revenue: 0, itemsSold: 0, pendingOrders: 0, lowStockCount: 0 },
     recentOrders: [],
     topProducts: [],
+    lowStockProducts: [],
+  });
+  const [analytics, setAnalytics] = useState({
+    overview: { todayRevenue: 0, monthlyRevenue: 0, yearlyRevenue: 0, todayOrders: 0, monthlyOrders: 0, yearlyOrders: 0 },
+    topProducts: [],
+    statusBreakdown: [],
+    reports: { daily: [], monthly: [], yearly: [] },
   });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -91,13 +99,15 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState("");
 
   const loadDashboard = async () => {
-    const [summaryRes, productsRes, categoriesRes] = await Promise.all([
+    const [summaryRes, analyticsRes, productsRes, categoriesRes] = await Promise.all([
       adminAPI.getSummary(),
+      adminAPI.getAnalytics(),
       productsAPI.getAll(undefined, undefined, { limit: 1000, sort: "latest" }),
       categoriesAPI.getAllRaw(),
     ]);
 
     setSummary(summaryRes.data.data);
+    setAnalytics(analyticsRes.data.data);
     setProducts(productsRes.data);
     setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : []);
   };
@@ -116,6 +126,8 @@ export default function AdminDashboard() {
       { icon: Users, label: "Users", value: summary.totals.users },
       { icon: BarChart3, label: "Revenue", value: formatPrice(summary.totals.revenue) },
       { icon: Tag, label: "Categories", value: summary.totals.categories },
+      { icon: ShoppingBag, label: "Pending", value: summary.totals.pendingOrders || 0 },
+      { icon: PackageCheck, label: "Low stock", value: summary.totals.lowStockCount || 0 },
     ],
     [summary]
   );
@@ -241,7 +253,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
         {stats.map(({ icon: Icon, label, value }) => (
           <div key={label} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
             <div className="flex items-center gap-2.5 text-gold mb-3">
@@ -252,6 +264,28 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <section className="rounded-lg border border-amber-200 bg-amber-50/70 p-5 text-sm text-amber-900 shadow-card dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-bold">Inventory alerts</h2>
+            <p className="mt-1 text-sm opacity-80">Products that need attention before they run out.</p>
+          </div>
+          <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">{summary.lowStockProducts.length} items</span>
+        </div>
+        <div className="mt-4 space-y-2">
+          {summary.lowStockProducts.map((product) => (
+            <div key={product._id} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 dark:bg-zinc-900/50">
+              <div>
+                <p className="font-semibold text-zinc-900 dark:text-white">{product.name}</p>
+                <p className="text-xs text-zinc-500">Only {product.stock} left in stock</p>
+              </div>
+              <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">Restock soon</span>
+            </div>
+          ))}
+          {summary.lowStockProducts.length === 0 && <p className="text-sm text-zinc-500">All products are well stocked right now.</p>}
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
@@ -382,9 +416,94 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Sales analytics</h2>
+            <p className="text-sm text-zinc-500">Daily, monthly and yearly reporting for every order.</p>
+          </div>
+          <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Live reports</span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { label: "Today", revenue: analytics.overview.todayRevenue, orders: analytics.overview.todayOrders },
+            { label: "This month", revenue: analytics.overview.monthlyRevenue, orders: analytics.overview.monthlyOrders },
+            { label: "This year", revenue: analytics.overview.yearlyRevenue, orders: analytics.overview.yearlyOrders },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4">
+              <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{item.label}</p>
+              <p className="mt-2 text-xl font-extrabold text-zinc-900 dark:text-white nums">{formatPrice(item.revenue || 0)}</p>
+              <p className="mt-1 text-sm text-zinc-500">{item.orders} orders</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Top products</h3>
+            <div className="mt-3 space-y-2">
+              {analytics.topProducts.map((product, index) => (
+                <div key={product._id} className="flex items-center justify-between rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2">
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-white">{index + 1}. {product.name}</p>
+                    <p className="text-xs text-zinc-500">{product.quantitySold} sold</p>
+                  </div>
+                  <span className="font-semibold nums">{formatPrice(product.revenue || 0)}</span>
+                </div>
+              ))}
+              {analytics.topProducts.length === 0 && <p className="text-sm text-zinc-500">No sales data yet.</p>}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Order status</h3>
+            <div className="mt-3 space-y-2">
+              {analytics.statusBreakdown.map((item) => (
+                <div key={item._id} className="flex items-center justify-between rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2">
+                  <span className="capitalize text-zinc-700 dark:text-zinc-200">{item._id || "unknown"}</span>
+                  <span className="font-semibold nums">{item.orders} orders</span>
+                </div>
+              ))}
+              {analytics.statusBreakdown.length === 0 && <p className="text-sm text-zinc-500">No statuses yet.</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          {[
+            { title: "Daily report", data: analytics.reports.daily },
+            { title: "Monthly report", data: analytics.reports.monthly },
+            { title: "Yearly report", data: analytics.reports.yearly },
+          ].map((report) => (
+            <div key={report.title} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">{report.title}</h3>
+              <div className="mt-3 space-y-2">
+                {report.data.map((item) => (
+                  <div key={item._id} className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-700 dark:text-zinc-200">{item._id}</span>
+                    <div className="text-right">
+                      <p className="font-semibold nums">{formatPrice(item.revenue || 0)}</p>
+                      <p className="text-xs text-zinc-500">{item.orders} orders</p>
+                    </div>
+                  </div>
+                ))}
+                {report.data.length === 0 && <p className="text-sm text-zinc-500">No data in this range.</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
-          <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white mb-4">Top Selling Products</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Top Selling Products</h2>
+              <p className="text-sm text-zinc-500">The best performing products by quantity sold.</p>
+            </div>
+            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Hot items</span>
+          </div>
           <div className="space-y-3">
             {summary.topProducts.map((product) => (
               <div key={product._id} className="flex items-center justify-between gap-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 p-3">
@@ -400,7 +519,13 @@ export default function AdminDashboard() {
         </section>
 
         <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
-          <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white mb-4">Recent Orders</h2>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Recent Orders</h2>
+              <p className="text-sm text-zinc-500">Keep fulfillment moving with fast updates.</p>
+            </div>
+            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Live</span>
+          </div>
           <div className="space-y-3">
             {summary.recentOrders.map((order) => (
               <div key={order._id} className="rounded-lg bg-zinc-50 dark:bg-zinc-800/50 p-3">
@@ -411,15 +536,20 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-sm font-bold nums">{formatPrice(order.totalAmount || 0)}</span>
                 </div>
-                <select
-                  value={order.status || "pending"}
-                  onChange={(event) => updateOrderStatus(order._id, event.target.value)}
-                  className={`mt-3 rounded-full border-0 px-3 py-1.5 text-xs font-semibold capitalize ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                </select>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
+                    <Clock3 size={13} /> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Recently placed"}
+                  </span>
+                  <select
+                    value={order.status || "pending"}
+                    onChange={(event) => updateOrderStatus(order._id, event.target.value)}
+                    className={`rounded-full border-0 px-3 py-1.5 text-xs font-semibold capitalize ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                  </select>
+                </div>
               </div>
             ))}
             {summary.recentOrders.length === 0 && <p className="text-zinc-500">No orders available yet.</p>}

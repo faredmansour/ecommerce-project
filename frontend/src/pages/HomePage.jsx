@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, Truck, ShieldCheck, RefreshCw, Headphones, Sparkles } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Truck, ShieldCheck, RefreshCw, Headphones, Sparkles, Search } from "lucide-react";
 import { productsAPI, categoriesAPI } from "../services/api";
 import ProductCard from "../components/ProductCard";
 import { siteConfig } from "../config/site.config";
@@ -11,6 +11,8 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([productsAPI.getAll(), categoriesAPI.getAllRaw()])
@@ -26,6 +28,12 @@ export default function HomePage() {
   const featured = products.slice(0, 8);
   const { hero, features } = siteConfig;
 
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const query = searchTerm.trim();
+    navigate(query ? `/category?search=${encodeURIComponent(query)}` : "/category");
+  };
+
   return (
     <div>
       {/* Hero */}
@@ -40,7 +48,24 @@ export default function HomePage() {
               </span>
               <h1 className="font-display text-4xl sm:text-5xl font-extrabold leading-[1.1] mt-4">{hero.title}</h1>
               <p className="mt-4 text-base sm:text-lg opacity-75">{hero.subtitle}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
+              <form onSubmit={handleSearch} className="mt-7 flex flex-wrap items-center gap-3 rounded-full bg-white/15 p-2 backdrop-blur">
+                <label className="flex flex-1 items-center gap-2 px-3 py-2 text-sm text-white/90">
+                  <Search size={16} />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Search products"
+                    className="w-full bg-transparent outline-none placeholder:text-white/60"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-gold-fg hover:opacity-90 transition"
+                >
+                  Explore <ArrowRight size={16} />
+                </button>
+              </form>
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   to={hero.ctaHref}
                   className="inline-flex items-center gap-2 rounded-full bg-gold text-gold-fg font-semibold px-6 py-3 hover:opacity-90 active:scale-95 transition"
@@ -111,6 +136,24 @@ export default function HomePage() {
           {categories.length === 0 && !loading && (
             <p className="col-span-full text-center text-zinc-400 py-6">No categories yet.</p>
           )}
+        </div>
+      </section>
+
+      {/* Quick highlights */}
+      <section className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Fast checkout</p>
+            <p className="mt-1 text-sm text-zinc-500">Secure payment options and a smooth one-step purchase experience.</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Member perks</p>
+            <p className="mt-1 text-sm text-zinc-500">Create an account to track orders, save favorites, and enjoy exclusive offers.</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Reliable delivery</p>
+            <p className="mt-1 text-sm text-zinc-500">From same-day dispatch to easy returns, your order stays protected.</p>
+          </div>
         </div>
       </section>
 

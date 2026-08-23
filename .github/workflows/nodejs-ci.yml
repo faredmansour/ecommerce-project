@@ -17,26 +17,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
+      # ── Backend ──
       - name: Install backend dependencies
-        run: |
-          cd "backend"
-          npm install
+        working-directory: ./backend
+        run: npm install
 
       - name: Run backend tests (if any)
-        run: |
-          cd "backend"
-          npm run test --if-present
+        working-directory: ./backend
+        run: npm run test --if-present
 
+      # ── Frontend ──
       - name: Install frontend dependencies
-        run: |
-          cd "frontend final project"
-          npm install
+        working-directory: ./frontend
+        run: npm install
 
       - name: Build frontend
-        run: |
-          cd "frontend final project"
-          npm run build --if-present
+        working-directory: ./frontend
+        run: npm run build --if-present

@@ -1,6 +1,8 @@
 const Order = require("../models/orderModel");
 const Cart = require("../models/cartModel");
 const Coupon = require("../models/couponModel");
+const controllerError = require("../utils/controllerError");
+const { buildOrderCommercialSnapshot } = require("../services/orderCommercialSnapshotService");
 
 const getOrders = async (req, res) => {
   try {
@@ -8,7 +10,7 @@ const getOrders = async (req, res) => {
     const orders = await Order.find(query).populate("user", "name email");
     res.status(200).json({ status: "success", data: orders });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -21,7 +23,7 @@ const getOrderById = async (req, res) => {
     }
     res.status(200).json({ status: "success", data: order });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -36,33 +38,36 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ status: "fail", message: "Order items are required" });
     }
 
-    let discount = 0;
     let coupon = null;
-    if (couponCode) {
-      coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true, expiresAt: { $gt: new Date() } });
+    if (couponCode?.trim()) {
+      coupon = await Coupon.findOne({ code: couponCode.trim().toUpperCase(), active: true, expiresAt: { $gt: new Date() } });
       if (!coupon) return res.status(400).json({ status: "fail", message: "Invalid or expired coupon" });
-      if (coupon.discountType === "percentage") {
-        discount = (totalAmount * coupon.discountValue) / 100;
-      } else {
-        discount = coupon.discountValue;
-      }
     }
 
+    const commercial = await buildOrderCommercialSnapshot(items, { coupon, requestedTotalAmount: totalAmount });
     const order = await Order.create({
       user: req.user.id,
-      items,
+      items: commercial.items,
       shippingAddress,
       coupon: coupon?._id,
       paymentMethod,
-      totalAmount,
-      discount,
-      status: "pending",
+      totalAmount: commercial.totalAmount,
+      discount: commercial.discount,
+      commercialSnapshot: commercial.commercialSnapshot,
+      status: paymentMethod === "cod" ? "pending" : "pending_payment",
     });
 
     await Cart.findOneAndDelete({ user: req.user.id });
     res.status(201).json({ status: "success", data: order });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    if (err.isOperational && err.statusCode) {
+      return res.status(err.statusCode).json({
+        status: "fail",
+        ...(err.code ? { code: err.code } : {}),
+        message: err.message,
+      });
+    }
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -77,11 +82,21 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ status: "fail", message: "Order not found" });
 
+    const canFulfill = order.status === "paid" ||
+      (order.status === "pending" && order.paymentMethod === "cod");
+    const allowedTransition =
+      (status === "pending" && order.status === "pending" && order.paymentMethod === "cod") ||
+      (status === "shipped" && canFulfill) ||
+      (status === "delivered" && (canFulfill || order.status === "shipped"));
+    if (["failed", "cancelled"].includes(order.status) || !allowedTransition) {
+      return res.status(409).json({ status: "fail", message: "Order cannot move to the requested fulfillment state." });
+    }
+
     order.status = status;
     await order.save();
     res.status(200).json({ status: "success", data: order });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

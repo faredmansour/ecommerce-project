@@ -62,7 +62,7 @@ npm run dev        # nodemon
 
 The API runs at `http://localhost:8000`. Interactive docs: `http://localhost:8000/api/docs`.
 
-See [`backend/connection/config.env.example`](backend/connection/config.env.example) for all environment variables. Only `DB_URL` and `JWT_SECRET` are required; Redis, Stripe, Cloudinary and SMTP are optional and degrade gracefully when unset.
+See [`backend/connection/config.env.example`](backend/connection/config.env.example) for all environment variables. `DB_URL` and a unique random `JWT_SECRET` of at least 32 characters are required; Redis, Stripe, Cloudinary and SMTP are optional. See [`SECURITY_BASELINE.md`](SECURITY_BASELINE.md) for implemented baseline controls and risks intentionally deferred to later phases.
 
 ### Frontend
 ```bash

@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
-import { Heart, ShoppingCart, Star } from "lucide-react";
-import { useState } from "react";
+import { Heart, ShoppingCart } from "lucide-react";
+import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { cartAPI, wishlistAPI } from "../services/api";
-import { formatPrice } from "../lib/format";
+import { useCart } from "../context/CartContext";
+import { wishlistAPI } from "../services/api";
+import { Badge, Button, PriceDisplay, ProductRating } from "./ui";
+import ProductImage from "./ProductImage";
 
 const BACKEND = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -20,39 +22,26 @@ function getImageUrl(image) {
   return `${BACKEND}${image}`;
 }
 
-function getFallbackImage(name = "Product") {
-  const label = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
-      <defs>
-        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-          <stop stop-color="#f5c451"/>
-          <stop offset="1" stop-color="#18181b"/>
-        </linearGradient>
-      </defs>
-      <rect width="480" height="480" fill="url(#g)"/>
-      <circle cx="356" cy="108" r="98" fill="rgba(255,255,255,.16)"/>
-      <rect x="92" y="300" width="296" height="52" rx="18" fill="rgba(255,255,255,.24)"/>
-      <text x="240" y="248" text-anchor="middle" font-family="Arial, sans-serif" font-size="104" font-weight="700" fill="#fff">${label || "P"}</text>
-    </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-
-export default function ProductCard({ product }) {
+export default function ProductCard({
+  product,
+  onAddToCart,
+  onToggleWishlist,
+  isWishlisted = false,
+  addToCartLabel = "Add to Cart",
+}) {
   const { isAuthenticated } = useAuth();
+  const { addItem } = useCart();
   const [adding, setAdding] = useState(false);
   const [wished, setWished] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
+  const [cartMessageIsError, setCartMessageIsError] = useState(false);
+  const addingRef = useRef(false);
 
-  const productId = product._id || product.id;
+  const productId = product.product_id || product._id || product.id;
   const categoryName = getCategoryName(product.category);
-  const imageUrl = getImageUrl(product.image) || getFallbackImage(product.name);
+  const imageUrl = getImageUrl(product.image);
   const rating = Math.round(product.rating || 0);
+  const wishlistActive = onToggleWishlist ? isWishlisted : wished;
 
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
@@ -68,24 +57,30 @@ export default function ProductCard({ product }) {
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
-    if (!requireAuth()) return;
+    if (addingRef.current || Number(product.stock) < 1) return;
+    addingRef.current = true;
     setAdding(true);
+    setCartMessage("");
+    setCartMessageIsError(false);
     try {
-      await cartAPI.add(productId, 1, {
-        name: product.name,
-        price: product.price || 0,
-        category: categoryName,
-        image: imageUrl,
-        original_price: product.original_price,
-      });
-    } catch {
-      /* silent */
+      if (onAddToCart) await onAddToCart(product);
+      else await addItem(product, 1);
+      setCartMessage("Added to cart.");
+    } catch (error) {
+      setCartMessageIsError(true);
+      setCartMessage(error.response?.data?.message || error.message || "Unable to add this product to your cart.");
+    } finally {
+      addingRef.current = false;
+      setAdding(false);
     }
-    setAdding(false);
   };
 
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
+    if (onToggleWishlist) {
+      await onToggleWishlist(productId, product);
+      return;
+    }
     if (!requireAuth()) return;
     setWished((w) => !w);
     try {
@@ -96,67 +91,55 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <div className="group relative flex flex-col bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-card hover:shadow-hover hover:-translate-y-1 transition-all duration-300">
-      <Link to={`/product/${productId}`} className="block relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-        <img
-          src={imageUrl}
-          alt={product.name}
-          loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => { e.target.src = getFallbackImage(product.name); }}
-        />
+    <article className="product-card group relative flex h-full flex-col overflow-hidden rounded-md border border-line bg-surface">
+      <Link to={`/product/${productId}`} aria-label={`View ${product.name}`} className="relative block aspect-square overflow-hidden bg-surface-muted">
+        <ProductImage src={imageUrl} alt={product.name} className="h-full w-full object-contain p-4 transition-transform duration-200 group-hover:scale-[1.02] sm:p-5" />
         {discount > 0 && (
-          <span className="absolute top-2.5 left-2.5 bg-gold text-gold-fg text-xs font-bold px-2 py-1 rounded-full nums">
+          <Badge variant="accent" className="absolute left-2.5 top-2.5 nums">
             -{discount}%
-          </span>
+          </Badge>
         )}
       </Link>
 
-      {/* Floating wishlist */}
-      <button
-        type="button"
-        onClick={handleToggleWishlist}
-        aria-label="Toggle wishlist"
-        className="absolute top-2.5 right-2.5 grid place-items-center h-9 w-9 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-sm text-zinc-700 dark:text-zinc-200 hover:text-gold opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
-      >
-        <Heart size={16} className={wished ? "fill-gold text-gold" : ""} />
-      </button>
-
-      <div className="flex flex-col flex-1 p-4">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
         {categoryName && (
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">{categoryName}</p>
+          <p className="mb-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted">{categoryName}</p>
         )}
         <Link
           to={`/product/${productId}`}
-          className="block font-medium text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 hover:text-gold transition min-h-[2.5rem]"
+          className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-ink transition-colors duration-200 hover:text-brand"
         >
           {product.name}
         </Link>
 
-        <div className="flex items-center gap-1 mt-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} size={13} className={i < rating ? "text-gold fill-gold" : "text-zinc-300 dark:text-zinc-600"} />
-          ))}
-          <span className="text-xs text-zinc-400 ml-1 nums">({product.reviews_count || 0})</span>
-        </div>
+        {(product.reviews_count > 0 || product.rating > 0) && <ProductRating rating={rating} count={product.reviews_count} className="mt-2" />}
 
-        <div className="flex items-baseline gap-2 mt-2 mb-4">
-          <span className="text-lg font-bold text-zinc-900 dark:text-white nums">{formatPrice(product.price || 0)}</span>
-          {product.original_price && (
-            <span className="text-sm text-zinc-400 line-through nums">{formatPrice(product.original_price)}</span>
-          )}
-        </div>
+        <PriceDisplay price={product.price || 0} originalPrice={product.original_price} className="mb-3 mt-2 text-lg" />
 
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={adding}
-          className="mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand text-brand-fg text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
-        >
-          <ShoppingCart size={16} />
-          {adding ? "Adding…" : "Add to Cart"}
-        </button>
+        <div className="mt-auto flex items-center gap-2 border-t border-line/70 pt-3">
+          <Button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={adding || Number(product.stock) < 1}
+            aria-label={adding ? "Adding to cart" : addToCartLabel === "Add" ? "Add to cart" : addToCartLabel}
+            className="min-w-0 flex-1 px-2 text-xs sm:text-sm"
+          >
+            <ShoppingCart size={16} className="shrink-0" />
+            <span className="hidden truncate sm:inline">{adding ? "Adding…" : addToCartLabel}</span>
+            <span className="truncate sm:hidden">{adding ? "Adding…" : addToCartLabel === "Add to Cart" ? "Add" : addToCartLabel}</span>
+          </Button>
+          <button
+            type="button"
+            onClick={handleToggleWishlist}
+            aria-label={wishlistActive ? "Remove from wishlist" : "Add to wishlist"}
+            aria-pressed={wishlistActive}
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-md border transition-colors duration-200 ${wishlistActive ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-muted hover:border-brand hover:text-brand"}`}
+          >
+            <Heart size={18} className={wishlistActive ? "fill-current" : ""} />
+          </button>
+        </div>
+        {cartMessage && <p role={cartMessageIsError ? "alert" : "status"} aria-live="polite" className={`mt-2 text-xs ${cartMessageIsError ? "text-state-danger" : "text-state-success"}`}>{cartMessage}</p>}
       </div>
-    </div>
+    </article>
   );
 }

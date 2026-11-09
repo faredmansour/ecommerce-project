@@ -1,21 +1,32 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { authAPI } from "../services/api";
+import { restoreSession } from "../lib/authSession";
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    let active = true;
+    restoreSession({ getMe: authAPI.getMe }).then((session) => {
+      if (!active) return;
+      setToken(session?.token || null);
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const expireSession = () => {
+      setToken(null);
+      setUser(null);
+    };
+    window.addEventListener("alfredo:unauthorized", expireSession);
+    return () => window.removeEventListener("alfredo:unauthorized", expireSession);
   }, []);
 
   const login = async (email, password) => {
@@ -23,22 +34,20 @@ export function AuthProvider({ children }) {
     const payload = response.data.data || response.data;
     const newToken = payload.accessToken || payload.token;
     const newUser = payload.user;
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
+    completeLogin({ accessToken: newToken, user: newUser });
   };
 
-  const register = async (name, email, password, role = "user") => {
-    const response = await authAPI.register(name, email, password, role);
-    const payload = response.data.data || response.data;
-    const newToken = payload.accessToken || payload.token;
-    const newUser = payload.user;
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
+  const register = async (name, email, password, returnTo) => {
+    const response = await authAPI.register(name, email, password, returnTo);
+    return response.data.data || response.data;
   };
+
+  const completeLogin = useCallback(({ accessToken, user: authenticatedUser }) => {
+    setToken(accessToken);
+    setUser(authenticatedUser);
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("user", JSON.stringify(authenticatedUser));
+  }, []);
 
   const logout = () => {
     setToken(null);
@@ -56,9 +65,10 @@ export function AuthProvider({ children }) {
         token,
         login,
         register,
+        completeLogin,
         logout,
         isAdmin,
-        isAuthenticated: !!token,
+        isAuthenticated: !!token && !!user,
         loading,
       }}
     >

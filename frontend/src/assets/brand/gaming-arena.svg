@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" fill="none">
+  <path d="M0 0h760v520H0z" fill="#E8E5E0"/>
+  <circle cx="590" cy="132" r="114" fill="#74243D" fill-opacity=".07"/>
+  <ellipse cx="390" cy="421" rx="250" ry="26" fill="#191A1D" fill-opacity=".1"/>
+  <path d="M123 92c0-13 10-23 23-23h128c13 0 23 10 23 23v296c0 14-10 24-23 24H146c-13 0-23-10-23-24V92Z" fill="#222428"/>
+  <path d="M143 91h111v285H143z" fill="#303238"/>
+  <path d="M143 91h111" stroke="#74243D" stroke-width="5"/>
+  <circle cx="198" cy="365" r="8" fill="#174538"/>
+  <path d="M310 222c14-39 49-65 91-65s77 26 91 65l35 102c9 26-17 49-42 36l-84-43-84 43c-25 13-51-10-42-36l35-102Z" fill="#191A1D"/>
+  <path d="M367 245v44m-22-22h44" stroke="#F8F7F4" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="475" cy="245" r="8" fill="#74243D"/>
+  <circle cx="495" cy="265" r="8" fill="#174538"/>
+  <circle cx="455" cy="265" r="8" fill="#D9D5D0"/>
+  <circle cx="475" cy="285" r="8" fill="#D9D5D0"/>
+  <path d="M614 118c0-34 28-62 62-62s62 28 62 62v18h-24v-18c0-21-17-38-38-38s-38 17-38 38v18h-24v-18Z" fill="#174538"/>
+  <path d="M598 133h48v83c0 13-10 23-23 23h-2c-13 0-23-10-23-23v-83Zm48 0h48v83c0 13-10 23-23 23h-2c-13 0-23-10-23-23v-83Z" fill="#74243D"/>
+</svg>

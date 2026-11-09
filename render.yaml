@@ -8,6 +8,7 @@ services:
     rootDir: backend
     plan: free
     buildCommand: npm ci
+    # This API process also runs the MongoDB-backed webhook worker runtime.
     startCommand: node server.js
     healthCheckPath: /health
     envVars:
@@ -15,6 +16,8 @@ services:
         value: production
       - key: PORT
         value: 8000
+      - key: PAYMENT_WEBHOOK_SHUTDOWN_TIMEOUT_MS
+        value: 10000
       - key: DB_URL
         sync: false
       - key: JWT_SECRET
@@ -24,6 +27,22 @@ services:
       - key: CLIENT_URL
         sync: false
       - key: FRONTEND_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
+        sync: false
+      - key: APPLE_REDIRECT_URI
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
@@ -37,9 +56,13 @@ services:
         sync: false
       - key: EMAIL_HOST
         sync: false
+      - key: EMAIL_PORT
+        value: 587
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
         sync: false
 
   - type: web
@@ -52,6 +75,10 @@ services:
       - key: VITE_API_URL
         sync: false
       - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: VITE_APPLE_CLIENT_ID
         sync: false
     routes:
       - type: rewrite

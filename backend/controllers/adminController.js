@@ -2,6 +2,7 @@ const Products = require("../models/productModel");
 const Order = require("../models/orderModel");
 const User = require("../models/usermodel");
 const Category = require("../models/categoryModel");
+const controllerError = require("../utils/controllerError");
 
 const buildDateRange = (period) => {
   const now = new Date();
@@ -81,7 +82,7 @@ const getDashboardSummary = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -149,7 +150,7 @@ const getAnalytics = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

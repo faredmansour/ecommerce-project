@@ -18,9 +18,26 @@ const newschema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true ,
+        required: false,
         minlength :8 ,
     },
+    googleSub: {
+        type: String,
+        default: undefined,
+        select: false,
+    },
+    appleSub: {
+        type: String,
+        default: undefined,
+        select: false,
+    },
+    emailVerified: { type: Boolean, default: false },
+    emailVerifiedAt: { type: Date, default: undefined },
+    authVersion: { type: Number, default: 0 },
+    emailVerificationTokenHash: { type: String, select: false },
+    emailVerificationExpiresAt: { type: Date, select: false },
+    emailVerificationSentAt: { type: Date, select: false },
+    emailVerificationReturnTo: { type: String, select: false },
      role:{
      type : String ,
 	enum: ["admin", "user"] ,
@@ -31,5 +48,8 @@ const newschema = new mongoose.Schema({
    default: Date.now
  }
 })
+
+newschema.index({ googleSub: 1 }, { unique: true, sparse: true });
+newschema.index({ appleSub: 1 }, { unique: true, sparse: true });
 
 module.exports=mongoose.model("users",newschema);

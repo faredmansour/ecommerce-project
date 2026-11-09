@@ -1,11 +1,12 @@
 const Address = require("../models/addressModel");
+const controllerError = require("../utils/controllerError");
 
 const getAddresses = async (req, res) => {
   try {
     const addresses = await Address.find({ user: req.user.id });
     res.status(200).json({ status: "success", data: addresses });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -17,7 +18,7 @@ const createAddress = async (req, res) => {
     }
     res.status(201).json({ status: "success", data: address });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -36,7 +37,7 @@ const updateAddress = async (req, res) => {
     }
     res.status(200).json({ status: "success", data: address });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -48,7 +49,7 @@ const deleteAddress = async (req, res) => {
     }
     res.status(200).json({ status: "success", data: address });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

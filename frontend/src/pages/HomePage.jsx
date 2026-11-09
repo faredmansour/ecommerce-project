@@ -1,213 +1,181 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Truck, ShieldCheck, RefreshCw, Headphones, Sparkles, Search } from "lucide-react";
-import { productsAPI, categoriesAPI } from "../services/api";
-import ProductCard from "../components/ProductCard";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { siteConfig } from "../config/site.config";
+import heroImageOne from "../assets/brand/home-hero-electronics-1.png";
+import heroImageTwo from "../assets/brand/home-hero-electronics-2.png";
+import heroImageThree from "../assets/brand/home-hero-electronics-3.png";
+import gamingArenaImage from "../assets/brand/gaming-arena-user.png";
+import { ActionLink, CategoryCard } from "../components/ui";
+import ProductCard from "../components/ProductCard";
+import { useEffect, useState } from "react";
+import { productsAPI } from "../services/api";
 
-const ICONS = { Truck, ShieldCheck, RefreshCw, Headphones };
+const heroImages = [
+  {
+    src: heroImageOne,
+    alt: "A collection of headphones, laptops, tablets, phones, and smartwatches",
+    label: "Everyday technology",
+  },
+  {
+    src: heroImageTwo,
+    alt: "Headphones, smartphone, smartwatch, and wireless earbuds on a blue display",
+    label: "Audio and mobile",
+  },
+  {
+    src: heroImageThree,
+    alt: "Smartphone, tablet, laptop, earbuds, and smartwatches arranged on a desk",
+    label: "Connected devices",
+  },
+];
 
 export default function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  const { hero } = siteConfig;
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [activeHeroImage, setActiveHeroImage] = useState(0);
 
+  // Load a small set of products for the homepage showcase
   useEffect(() => {
-    Promise.all([productsAPI.getAll(), categoriesAPI.getAllRaw()])
-      .then(([productsRes, categoriesRes]) => {
-        setProducts(productsRes.data);
-        const raw = categoriesRes.data;
-        setCategories(Array.isArray(raw) ? raw : []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    // The backend supports a `limit` query param; request a few items.
+    productsAPI
+      .getAll(undefined, undefined, { limit: 6 })
+      .then((res) => setFeaturedProducts(res.data))
+      .catch(() => setFeaturedProducts([]));
   }, []);
 
-  const featured = products.slice(0, 8);
-  const { hero, features } = siteConfig;
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveHeroImage((current) => (current + 1) % heroImages.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const handleSearch = (event) => {
-    event.preventDefault();
-    const query = searchTerm.trim();
-    navigate(query ? `/category?search=${encodeURIComponent(query)}` : "/category");
-  };
+  const arenas = [
+    {
+      name: "GAMING",
+      description: "Precision gear. Uninterrupted play.",
+      image: gamingArenaImage,
+      alt: "Gaming setup with a headset, controllers, RGB keyboard, gaming PC, and mice",
+      href: "/category?search=gaming",
+    },
+    {
+      name: "TECHNOLOGY",
+      description: "Everyday technology, elevated.",
+      image: heroImageThree,
+      alt: "Smartphone, tablet, laptop, earbuds, and smartwatches arranged on a desk",
+      href: "/category?search=technology",
+    },
+  ];
 
   return (
     <div>
-      {/* Hero */}
-      <section className="max-w-7xl mx-auto px-4 pt-6">
-        <div className="relative overflow-hidden rounded-3xl bg-brand text-brand-fg">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold/20 blur-3xl" />
-          <div className="absolute right-1/3 bottom-0 h-56 w-56 rounded-full bg-gold/10 blur-3xl" />
-          <div className="relative grid md:grid-cols-2 items-center gap-8 px-7 sm:px-12 py-12 sm:py-16">
-            <div className="max-w-lg">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 text-gold px-3 py-1 text-xs font-semibold uppercase tracking-wider">
-                <Sparkles size={13} /> {hero.eyebrow}
-              </span>
-              <h1 className="font-display text-4xl sm:text-5xl font-extrabold leading-[1.1] mt-4">{hero.title}</h1>
-              <p className="mt-4 text-base sm:text-lg opacity-75">{hero.subtitle}</p>
-              <form onSubmit={handleSearch} className="mt-7 flex flex-wrap items-center gap-3 rounded-full bg-white/15 p-2 backdrop-blur">
-                <label className="flex flex-1 items-center gap-2 px-3 py-2 text-sm text-white/90">
-                  <Search size={16} />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Search products"
-                    className="w-full bg-transparent outline-none placeholder:text-white/60"
-                  />
-                </label>
+      {/* Hero section */}
+      <section aria-labelledby="home-title" className="mx-auto max-w-content px-4 pb-7 pt-5 sm:pb-9 sm:pt-7">
+        <div className="brand-home-hero grid min-w-0 overflow-hidden md:min-h-[460px] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="brand-home-hero-copy flex flex-col items-start justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
+            <p className="brand-home-hero-kicker inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-brand sm:text-sm">
+              <span aria-hidden="true" className="h-px w-7 bg-brand" />
+              {hero.eyebrow}
+            </p>
+            <h1 id="home-title" className="brand-home-hero-title mt-5 max-w-xl font-display text-hero font-extrabold uppercase leading-[0.98] tracking-[-0.06em] text-ink">
+              {hero.title}
+            </h1>
+            <h2 className="brand-home-hero-subtitle mt-3 max-w-xl font-display text-xl font-bold uppercase leading-tight tracking-[-0.035em] text-secondary sm:text-2xl lg:text-3xl">
+              {hero.secondaryTitle}
+            </h2>
+            <p className="brand-home-hero-description mt-5 max-w-md text-base leading-7 text-muted sm:text-lg">
+              {hero.subtitle}
+            </p>
+            <ActionLink to={hero.ctaHref} className="brand-home-hero-cta mt-7 min-h-12 gap-3 px-6 py-3 font-bold tracking-wide">
+              {hero.ctaLabel}
+              <ArrowRight size={18} aria-hidden="true" />
+            </ActionLink>
+          </div>
+          <div className="brand-home-hero-visual min-w-0">
+            <figure className="brand-home-gallery">
+              <div className="brand-home-gallery-stage">
+                <img
+                  key={heroImages[activeHeroImage].src}
+                  src={heroImages[activeHeroImage].src}
+                  alt={heroImages[activeHeroImage].alt}
+                  className="brand-home-hero-image"
+                />
                 <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-gold-fg hover:opacity-90 transition"
+                  type="button"
+                  className="brand-home-gallery-control brand-home-gallery-previous"
+                  aria-label="Show previous hero image"
+                  onClick={() => setActiveHeroImage((current) => (current - 1 + heroImages.length) % heroImages.length)}
                 >
-                  Explore <ArrowRight size={16} />
+                  <ChevronLeft size={20} aria-hidden="true" />
                 </button>
-              </form>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  to={hero.ctaHref}
-                  className="inline-flex items-center gap-2 rounded-full bg-gold text-gold-fg font-semibold px-6 py-3 hover:opacity-90 active:scale-95 transition"
+                <button
+                  type="button"
+                  className="brand-home-gallery-control brand-home-gallery-next"
+                  aria-label="Show next hero image"
+                  onClick={() => setActiveHeroImage((current) => (current + 1) % heroImages.length)}
                 >
-                  {hero.ctaLabel} <ArrowRight size={18} />
-                </Link>
-                <Link
-                  to="/category"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 font-semibold hover:bg-white/10 transition"
-                >
-                  {hero.secondaryCtaLabel}
-                </Link>
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
               </div>
-            </div>
-            <div className="hidden md:block">
-              <img
-                src={hero.image}
-                alt={siteConfig.brand.name}
-                className="w-full max-w-md ml-auto rounded-2xl object-cover shadow-2xl ring-1 ring-white/10"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust bar */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {features.map((f) => {
-            const Icon = ICONS[f.icon] || Truck;
-            return (
-              <div
-                key={f.title}
-                className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4"
-              >
-                <span className="grid place-items-center h-11 w-11 rounded-xl bg-gold/15 text-gold shrink-0">
-                  <Icon size={20} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">{f.title}</p>
-                  <p className="text-xs text-zinc-500 truncate">{f.subtitle}</p>
+              <figcaption className="brand-home-gallery-caption">
+                <span className="brand-home-gallery-label">{heroImages[activeHeroImage].label}</span>
+                <div className="brand-home-gallery-thumbnails" aria-label="Choose a hero image">
+                  {heroImages.map((image, index) => (
+                    <button
+                      key={image.src}
+                      type="button"
+                      className="brand-home-gallery-thumbnail"
+                      aria-label={`Show ${image.label} image`}
+                      aria-pressed={activeHeroImage === index}
+                      onClick={() => setActiveHeroImage(index)}
+                    >
+                      <img src={image.src} alt="" />
+                    </button>
+                  ))}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <SectionHeader title="Shop by Category" href="/category" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-5">
-          {categories.map((cat) => {
-            const name = cat.name || cat;
-            return (
-              <Link
-                key={cat._id || cat}
-                to={`/category?cat=${encodeURIComponent(name)}`}
-                className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 text-center hover:border-gold hover:shadow-card transition"
-              >
-                <div className="grid place-items-center w-14 h-14 mx-auto mb-3 rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-gold/15 transition">
-                  <span className="font-display text-gold font-extrabold text-xl">{name.charAt(0)}</span>
-                </div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{name}</p>
-              </Link>
-            );
-          })}
-          {categories.length === 0 && !loading && (
-            <p className="col-span-full text-center text-zinc-400 py-6">No categories yet.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Quick highlights */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Fast checkout</p>
-            <p className="mt-1 text-sm text-zinc-500">Secure payment options and a smooth one-step purchase experience.</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Member perks</p>
-            <p className="mt-1 text-sm text-zinc-500">Create an account to track orders, save favorites, and enjoy exclusive offers.</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-white">Reliable delivery</p>
-            <p className="mt-1 text-sm text-zinc-500">From same-day dispatch to easy returns, your order stays protected.</p>
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      {/* Featured products */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <SectionHeader title="Featured Products" href="/category" />
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-5">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-pulse">
-                <div className="aspect-square bg-zinc-200 dark:bg-zinc-800" />
-                <div className="p-4 space-y-2">
-                  <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
-                  <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5" />
-                  <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded mt-3" />
-                </div>
-              </div>
-            ))}
+      {/* Arena selection */}
+      <section aria-labelledby="arena-title" className="mx-auto max-w-content px-4 pb-12 pt-2 sm:pb-16">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4 sm:mb-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand">ALFREDO COLLECTIONS</p>
+            <h2 id="arena-title" className="mt-2 font-display text-2xl font-extrabold uppercase tracking-[-0.04em] text-ink sm:text-3xl">
+              CHOOSE YOUR ARENA.
+            </h2>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-5">
-            {featured.map((product) => (
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6">
+          {arenas.map((arena) => (
+            <CategoryCard
+              key={arena.name}
+              title={arena.name}
+              description={arena.description}
+              image={arena.image}
+              imageAlt={arena.alt}
+              to={arena.href}
+              className="arena-card-photo"
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Featured products showcase */}
+      {featuredProducts.length > 0 && (
+        <section aria-labelledby="featured-products" className="mx-auto max-w-content px-4 py-8">
+          <h2 id="featured-products" className="mb-4 font-display text-2xl font-bold text-ink">
+            Featured Products
+          </h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {featuredProducts.map((product) => (
               <ProductCard key={product._id || product.id} product={product} />
             ))}
           </div>
-        )}
-      </section>
-
-      {/* CTA band */}
-      <section className="max-w-7xl mx-auto px-4 pb-14">
-        <div className="rounded-3xl bg-gradient-to-r from-zinc-900 to-zinc-800 text-white px-8 py-12 text-center">
-          <h2 className="font-display text-3xl font-extrabold mb-3">Join {siteConfig.brand.name} today</h2>
-          <p className="opacity-70 max-w-md mx-auto mb-6">
-            Create an account to save favorites, track orders, and unlock member deals.
-          </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 rounded-full bg-gold text-gold-fg font-semibold px-6 py-3 hover:opacity-90 transition"
-          >
-            Sign Up Free <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function SectionHeader({ title, href }) {
-  return (
-    <div className="flex items-end justify-between">
-      <h2 className="font-display text-2xl font-extrabold text-zinc-900 dark:text-white">{title}</h2>
-      <Link to={href} className="text-sm font-medium text-gold hover:underline flex items-center gap-1">
-        View All <ArrowRight size={14} />
-      </Link>
+        </section>
+      )}
     </div>
   );
 }

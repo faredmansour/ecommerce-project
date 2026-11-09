@@ -1,7 +1,7 @@
 const Joi = require("joi");
 
 const addToCartSchema = Joi.object({
-  product_id: Joi.string().required(),
+  product_id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
   quantity: Joi.number().integer().min(1).default(1),
   name: Joi.string().trim().required(),
   price: Joi.number().min(0).required(),

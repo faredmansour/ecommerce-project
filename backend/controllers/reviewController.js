@@ -1,12 +1,13 @@
 const Review = require("../models/reviewModel");
 const Product = require("../models/productModel");
+const controllerError = require("../utils/controllerError");
 
 const getReviewsForProduct = async (req, res) => {
   try {
     const reviews = await Review.find({ product: req.params.id }).populate("user", "name");
     res.status(200).json({ status: "success", data: reviews });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -42,7 +43,7 @@ const submitReview = async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).json({ status: "fail", message: "You already submitted a review for this product" });
     }
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

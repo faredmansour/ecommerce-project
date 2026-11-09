@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { wishlistAPI, cartAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import { formatPrice } from "../lib/format";
+import ProductCard from "../components/ProductCard";
 
 export default function WishlistPage() {
   const [items, setItems] = useState([]);
@@ -56,48 +56,33 @@ export default function WishlistPage() {
   };
 
   if (loading) {
-    return <div className="max-w-7xl mx-auto px-4 py-16 text-center text-zinc-500">Loading wishlist…</div>;
+    return <div role="status" className="mx-auto max-w-content px-4 py-16 text-center text-muted">Loading wishlist…</div>;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white mb-6">My Wishlist</h1>
+    <div className="mx-auto max-w-content px-4 py-6 sm:py-8">
+      <h1 className="mb-6 border-b border-line pb-4 font-display text-2xl font-bold text-ink dark:text-white sm:text-3xl">My Wishlist</h1>
 
       {items.length === 0 ? (
-        <div className="text-center py-20 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
-          <Heart size={48} className="text-zinc-300 dark:text-zinc-600 mx-auto mb-4" />
-          <p className="text-zinc-700 dark:text-zinc-200 text-lg font-medium mb-1">Your wishlist is empty</p>
-          <p className="text-zinc-400 text-sm mb-6">Save items you love for later</p>
-          <Link to="/category" className="inline-flex items-center gap-2 bg-brand text-brand-fg px-6 py-3 rounded-full font-semibold hover:opacity-90 transition">
+        <div className="border border-dashed border-line bg-surface px-4 py-14 text-center">
+          <Heart size={36} aria-hidden="true" className="mx-auto mb-4 text-brand" />
+          <p className="mb-1 text-lg font-semibold text-ink dark:text-white">Your wishlist is empty</p>
+          <p className="mb-6 text-sm text-muted">Save items you love for later</p>
+          <Link to="/category" className="inline-flex min-h-11 items-center gap-2 rounded-md bg-brand px-5 py-2.5 font-semibold text-brand-fg transition-colors duration-200 hover:bg-brand-hover">
             Browse Products
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
           {items.map((item) => (
-            <div key={item._id || item.product_id} className="group bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-card hover:shadow-hover transition">
-              <Link to={`/product/${item.product_id}`} className="block relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.target.src = "/placeholder.png"; }} />
-              </Link>
-              <div className="p-4">
-                {item.category && <p className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1">{item.category}</p>}
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-2">{item.name}</h3>
-                {item.price != null && (
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-lg font-bold text-zinc-900 dark:text-white nums">{formatPrice(item.price)}</span>
-                    {item.original_price && <span className="text-sm text-zinc-400 line-through nums">{formatPrice(item.original_price)}</span>}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => addToCart(item.product_id, item)} className="flex-1 flex items-center justify-center gap-1.5 bg-brand text-brand-fg text-sm py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                    <ShoppingCart size={14} /> Add
-                  </button>
-                  <button onClick={() => removeFromWishlist(item.product_id)} aria-label="Remove" className="p-2 text-red-500 border border-red-200 dark:border-red-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition">
-                    <Heart size={16} className="fill-red-500" />
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ProductCard
+              key={item._id || item.product_id}
+              product={item}
+              isWishlisted
+              addToCartLabel="Add"
+              onAddToCart={() => addToCart(item.product_id, item)}
+              onToggleWishlist={() => removeFromWishlist(item.product_id)}
+            />
           ))}
         </div>
       )}

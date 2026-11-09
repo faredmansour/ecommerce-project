@@ -1,0 +1,461 @@
+@layer components {
+  .brand-home-hero {
+    position: relative;
+    isolation: isolate;
+    min-height: 34rem;
+    border: 1px solid rgb(var(--color-border));
+    border-radius: var(--radius-lg);
+    background: rgb(var(--color-surface));
+    box-shadow: var(--shadow-card);
+  }
+
+  .brand-home-hero-copy {
+    position: relative;
+    z-index: 2;
+    width: 130%;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--color-surface) / 0.88) 0%,
+      rgb(var(--color-surface) / 0.82) 68%,
+      rgb(var(--color-surface) / 0.58) 86%,
+      transparent 100%
+    );
+    animation: home-hero-enter var(--motion-slow) var(--motion-ease) both;
+  }
+
+  .brand-home-hero-kicker {
+    letter-spacing: 0.18em;
+  }
+
+  .brand-home-hero-title {
+    max-width: 10ch;
+    text-wrap: balance;
+  }
+
+  .brand-home-hero-subtitle {
+    text-wrap: balance;
+  }
+
+  .brand-home-hero-description {
+    max-width: 34rem;
+  }
+
+  .brand-home-hero-cta {
+    transition:
+      transform var(--motion-standard) var(--motion-ease),
+      box-shadow var(--motion-standard) var(--motion-ease);
+  }
+
+  .brand-home-hero-cta:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  .brand-home-hero-visual {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    isolation: isolate;
+    overflow: hidden;
+    background: rgb(var(--color-surface));
+  }
+
+  .brand-home-gallery {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    margin: 0;
+    animation: home-hero-art-enter var(--motion-slow) var(--motion-ease) both;
+  }
+
+  .brand-home-gallery-stage {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    min-height: 18rem;
+    background: rgb(var(--color-surface-muted));
+    isolation: isolate;
+  }
+
+  .brand-home-gallery-stage::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background:
+      linear-gradient(90deg, rgb(var(--color-surface)) 0%, rgb(var(--color-surface) / 0.7) 8%, transparent 42%),
+      linear-gradient(0deg, rgb(25 26 29 / 0.58) 0%, transparent 34%);
+    content: "";
+    pointer-events: none;
+  }
+
+  .brand-home-hero-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    animation: home-hero-image-enter var(--motion-standard) var(--motion-ease) both;
+    transition:
+      filter var(--motion-standard) var(--motion-ease),
+      transform var(--motion-slow) var(--motion-ease);
+  }
+
+  .brand-home-gallery-stage:hover .brand-home-hero-image {
+    filter: saturate(1.04);
+    transform: scale(1.025);
+  }
+
+  .brand-home-gallery-control {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid rgb(var(--color-border) / 0.9);
+    border-radius: var(--radius-pill);
+    background: rgb(var(--color-surface) / 0.94);
+    color: rgb(var(--color-text));
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-50%);
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      color var(--motion-fast) var(--motion-ease),
+      opacity var(--motion-fast) var(--motion-ease);
+  }
+
+  .brand-home-gallery-stage:hover .brand-home-gallery-control,
+  .brand-home-gallery-control:focus-visible {
+    opacity: 1;
+  }
+
+  .brand-home-gallery-control:hover {
+    background: rgb(var(--color-brand));
+    color: rgb(var(--color-brand-fg));
+  }
+
+  .brand-home-gallery-previous {
+    right: 4.25rem;
+  }
+
+  .brand-home-gallery-next {
+    right: 0.75rem;
+  }
+
+  .brand-home-gallery-caption {
+    position: absolute;
+    z-index: 2;
+    inset: auto 0 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 2.5rem clamp(1rem, 2vw, 1.5rem) 1rem;
+  }
+
+  .brand-home-gallery-label {
+    color: #fff;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 5px rgb(25 26 29 / 0.45);
+  }
+
+  .brand-home-gallery-thumbnails {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5rem;
+  }
+
+  .brand-home-gallery-thumbnail {
+    width: 3.25rem;
+    height: 2.5rem;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    background: rgb(var(--color-surface));
+    cursor: pointer;
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      opacity var(--motion-fast) var(--motion-ease);
+  }
+
+  .brand-home-gallery-thumbnail[aria-pressed="true"] {
+    border-color: rgb(var(--color-brand));
+  }
+
+  .brand-home-gallery-thumbnail:not([aria-pressed="true"]) {
+    opacity: 0.72;
+  }
+
+  .brand-home-gallery-thumbnail:hover {
+    opacity: 1;
+  }
+
+  .brand-home-gallery-thumbnail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @keyframes home-hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes home-hero-art-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (max-width: 47.999rem) {
+    .brand-home-hero {
+      min-height: 40rem;
+    }
+
+    .brand-home-hero-visual {
+      min-height: 0;
+    }
+
+    .brand-home-hero-copy {
+      align-self: start;
+      width: 100%;
+      min-height: 0;
+      background: linear-gradient(
+        180deg,
+        rgb(var(--color-surface) / 0.9) 0%,
+        rgb(var(--color-surface) / 0.85) 78%,
+        rgb(var(--color-surface) / 0.68) 100%
+      );
+      justify-content: flex-start;
+    }
+
+    .brand-home-gallery-stage {
+      min-height: 0;
+    }
+
+    .brand-home-gallery-stage::after {
+      background: linear-gradient(0deg, rgb(25 26 29 / 0.62) 0%, transparent 48%);
+    }
+
+    .brand-home-hero-title {
+      max-width: 12ch;
+      font-size: clamp(2.5rem, 11vw, 4rem);
+    }
+
+    .brand-home-gallery-caption {
+      gap: 0.5rem;
+      padding: 2rem 0.75rem 0.75rem;
+    }
+
+    .brand-home-gallery-label {
+      font-size: var(--font-size-xs);
+    }
+
+    .brand-home-gallery-thumbnails {
+      gap: 0.35rem;
+    }
+
+    .brand-home-gallery-thumbnail {
+      width: 2.75rem;
+      height: 2.1rem;
+    }
+
+    .brand-home-gallery-control {
+      top: 68%;
+      width: 2.5rem;
+      height: 2.5rem;
+      opacity: 1;
+    }
+
+    .arena-card-photo {
+      aspect-ratio: 1.25;
+      min-height: 16rem;
+    }
+  }
+
+  .arena-card {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    overflow: hidden;
+    background: rgb(var(--color-surface-muted));
+    transition:
+      border-color var(--motion-standard) var(--motion-ease),
+      box-shadow var(--motion-standard) var(--motion-ease),
+      transform var(--motion-standard) var(--motion-ease);
+  }
+
+  .arena-card::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--color-surface-muted)) 0%,
+      rgb(var(--color-surface-muted) / 0.96) 32%,
+      rgb(var(--color-surface-muted) / 0.18) 76%,
+      transparent 100%
+    );
+    content: "";
+    pointer-events: none;
+  }
+
+  .arena-card:hover {
+    border-color: rgb(var(--color-brand) / 0.5);
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+  }
+
+  .arena-card-image {
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 0 auto;
+    width: 78%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--motion-slow) var(--motion-ease);
+  }
+
+  .arena-card:hover .arena-card-image {
+    transform: scale(1.035);
+  }
+
+  .arena-card-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .arena-card-photo {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    aspect-ratio: 1.85;
+    min-height: 18rem;
+    border-color: rgb(var(--color-border));
+    background: rgb(var(--color-text));
+  }
+
+  .arena-card-photo::after {
+    background: linear-gradient(
+      0deg,
+      rgb(25 26 29 / 0.82) 0%,
+      rgb(25 26 29 / 0.62) 24%,
+      rgb(25 26 29 / 0.08) 68%,
+      transparent 100%
+    );
+  }
+
+  .arena-card-photo .arena-card-image {
+    inset: 0;
+    width: 100%;
+    object-position: center;
+  }
+
+  .arena-card-photo .arena-card-content {
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .arena-card-photo .arena-card-content > span:first-child {
+    color: rgb(255 255 255 / 0.86);
+  }
+
+  .arena-card-photo .arena-card-content > span:nth-child(2) {
+    color: #fff;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.2);
+  }
+
+  .arena-card-photo .arena-card-content > span:last-child {
+    color: rgb(255 255 255 / 0.92);
+  }
+
+  .product-card {
+    transition:
+      border-color var(--motion-standard) var(--motion-ease),
+      box-shadow var(--motion-standard) var(--motion-ease),
+      transform var(--motion-standard) var(--motion-ease);
+  }
+
+  .product-card:hover {
+    border-color: rgb(var(--color-border-strong));
+    box-shadow: 0 2px 8px rgb(25 26 29 / 0.08);
+  }
+
+  .product-detail-image {
+    background: rgb(var(--color-surface-muted));
+    box-shadow: var(--shadow-card);
+  }
+
+  .product-detail-buybox {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    background: rgb(var(--color-surface));
+    box-shadow: var(--shadow-card);
+  }
+
+  .cart-item-card {
+    transition:
+      border-color var(--motion-standard) var(--motion-ease),
+      box-shadow var(--motion-standard) var(--motion-ease);
+  }
+
+  .cart-item-card:hover {
+    border-color: rgb(var(--color-border-strong));
+    box-shadow: var(--shadow-card);
+  }
+
+  .cart-summary {
+    border-top: 3px solid rgb(var(--color-brand));
+  }
+
+  .checkout-progress,
+  .checkout-summary {
+    border-top: 3px solid rgb(var(--color-brand));
+  }
+
+  .checkout-form-section {
+    box-shadow: var(--shadow-card);
+  }
+
+  .order-confirmation-card {
+    border-top: 3px solid rgb(var(--color-brand));
+    box-shadow: var(--shadow-card);
+  }
+
+  .ui-control {
+    min-height: 2.75rem;
+    border: 1px solid rgb(var(--color-border-strong));
+    border-radius: var(--radius-md);
+    background: rgb(var(--color-surface));
+    color: rgb(var(--color-text));
+    transition:
+      border-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-fast) var(--motion-ease);
+  }
+
+  .ui-control::placeholder {
+    color: rgb(var(--color-muted));
+  }
+
+  .ui-control:focus-visible {
+    border-color: rgb(var(--color-brand));
+  }
+}

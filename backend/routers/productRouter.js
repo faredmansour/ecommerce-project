@@ -3,8 +3,9 @@ const router = express.Router();
 const productController = require("../controllers/productController.js");
 const reviewController = require("../controllers/reviewController.js");
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
-const { upload, handleMulterError } = require("../middlewares/multer");
+const { upload, uploadRateLimit, validateUploadedImage, handleMulterError } = require("../middlewares/multer");
 const validateRequest = require("../middlewares/validateRequest");
+const validateObjectIdParam = require("../middlewares/validateObjectIdParam");
 const { createProductSchema, updateProductSchema } = require("../controllers/validation/productValidation");
 const { submitReviewSchema } = require("../controllers/validation/reviewValidation");
 
@@ -20,21 +21,21 @@ router.get("/", productController.getProducts);
  * @desc Get reviews for a product
  * @access Public
  */
-router.get("/:id/reviews", reviewController.getReviewsForProduct);
+router.get("/:id/reviews", validateObjectIdParam(), reviewController.getReviewsForProduct);
 
 /**
  * @route POST /api/products/:id/reviews
  * @desc Create a review for a product
  * @access User
  */
-router.post("/:id/reviews", protect, validateRequest(submitReviewSchema), reviewController.submitReview);
+router.post("/:id/reviews", protect, validateObjectIdParam(), validateRequest(submitReviewSchema), reviewController.submitReview);
 
 /**
  * @route GET /api/products/:id
  * @desc Get a single product by ID
  * @access Public
  */
-router.get("/:id", productController.getProductById);
+router.get("/:id", validateObjectIdParam(), productController.getProductById);
 
 /**
  * @route POST /api/products
@@ -45,8 +46,10 @@ router.post(
   "/",
   protect,
   restrictTo("admin"),
+  uploadRateLimit,
   upload.single("image"),
   handleMulterError,
+  validateUploadedImage,
   validateRequest(createProductSchema),
   productController.createProduct
 );
@@ -60,8 +63,11 @@ router.put(
   "/:id",
   protect,
   restrictTo("admin"),
+  validateObjectIdParam(),
+  uploadRateLimit,
   upload.single("image"),
   handleMulterError,
+  validateUploadedImage,
   validateRequest(updateProductSchema),
   productController.updateProduct
 );
@@ -71,6 +77,6 @@ router.put(
  * @desc Delete a product by ID
  * @access Admin
  */
-router.delete("/:id", protect, restrictTo("admin"), productController.deleteProduct);
+router.delete("/:id", protect, restrictTo("admin"), validateObjectIdParam(), productController.deleteProduct);
 
 module.exports = router;

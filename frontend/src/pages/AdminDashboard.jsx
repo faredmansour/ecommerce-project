@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { adminAPI, categoriesAPI, ordersAPI, productsAPI } from "./../services/api";
 import { formatPrice } from "../lib/format";
+import ProductImage from "../components/ProductImage";
 
 const BACKEND = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -50,30 +51,6 @@ const getProductImage = (image) => {
   if (!image) return "";
   if (image.startsWith("http") || image.startsWith("data:")) return image;
   return `${BACKEND}${image}`;
-};
-
-const getFallbackImage = (name = "Product") => {
-  const label = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-      <defs>
-        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-          <stop stop-color="#f5c451"/>
-          <stop offset="1" stop-color="#18181b"/>
-        </linearGradient>
-      </defs>
-      <rect width="160" height="160" rx="18" fill="url(#g)"/>
-      <circle cx="118" cy="36" r="34" fill="rgba(255,255,255,.16)"/>
-      <rect x="30" y="96" width="100" height="18" rx="7" fill="rgba(255,255,255,.24)"/>
-      <text x="80" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#fff">${label || "P"}</text>
-    </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
 export default function AdminDashboard() {
@@ -243,7 +220,7 @@ export default function AdminDashboard() {
           <p className="mt-1 text-zinc-500">Add products, manage inventory, track orders and watch store performance.</p>
         </div>
         <Link to="/category" className="inline-flex items-center gap-2 rounded-full bg-brand text-brand-fg px-5 py-3 text-sm font-semibold hover:opacity-90 transition">
-          <ShoppingBag size={17} /> View Store
+          <ShoppingBag size={18} /> View Store
         </Link>
       </div>
 
@@ -253,11 +230,11 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {stats.map(({ icon: Icon, label, value }) => (
           <div key={label} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-card">
-            <div className="flex items-center gap-2.5 text-gold mb-3">
-              <span className="grid place-items-center h-9 w-9 rounded-lg bg-gold/15"><Icon size={18} /></span>
+            <div className="flex items-center gap-2.5 text-brand mb-3">
+              <span className="grid place-items-center h-9 w-9 rounded-lg bg-sage/50"><Icon size={18} /></span>
               <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{label}</span>
             </div>
             <p className="text-2xl font-extrabold text-zinc-900 dark:text-white nums">{value}</p>
@@ -287,21 +264,49 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-        <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="min-w-0 rounded-lg border border-zinc-200 bg-white p-4 shadow-card dark:border-zinc-800 sm:p-6 dark:bg-zinc-900">
           <div className="flex items-center justify-between gap-4 mb-5">
             <div>
               <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Products</h2>
               <p className="text-sm text-zinc-500">Edit inventory and remove old products.</p>
             </div>
             {editingProduct && (
-              <button onClick={resetProductForm} className="inline-flex items-center gap-2 rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:text-gold transition">
-                <X size={15} /> Cancel edit
+              <button onClick={resetProductForm} className="inline-flex items-center gap-2 rounded-full border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm hover:text-brand transition">
+                <X size={16} /> Cancel edit
               </button>
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="space-y-3 lg:hidden">
+            {products.map((product) => (
+              <article key={product._id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/50">
+                <div className="flex min-w-0 items-center gap-3">
+                  <ProductImage src={getProductImage(product.image)} alt={product.name} className="h-12 w-12 shrink-0 rounded-md object-cover" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-900 dark:text-white">{product.name}</p>
+                    <p className="line-clamp-2 text-xs text-zinc-500">{product.description}</p>
+                  </div>
+                </div>
+                <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-zinc-200 pt-3 text-xs dark:border-zinc-700">
+                  <div className="min-w-0"><dt className="text-zinc-500">Category</dt><dd className="truncate font-medium text-zinc-800 dark:text-zinc-200">{getCategoryName(product.category)}</dd></div>
+                  <div><dt className="text-zinc-500">Price</dt><dd className="font-medium text-zinc-800 nums dark:text-zinc-200">{formatPrice(product.price || 0)}</dd></div>
+                  <div><dt className="text-zinc-500">Stock</dt><dd className="font-medium text-zinc-800 nums dark:text-zinc-200">{product.stock || 0}</dd></div>
+                </dl>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button onClick={() => startEdit(product)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-zinc-300 px-3 text-sm font-medium text-zinc-700 hover:text-brand dark:border-zinc-700 dark:text-zinc-200">
+                    <Pencil size={16} /> Edit
+                  </button>
+                  <button onClick={() => deleteProduct(product)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-zinc-300 px-3 text-sm font-medium text-zinc-700 hover:text-brand dark:border-zinc-700 dark:text-zinc-200">
+                    <Trash2 size={16} /> Remove
+                  </button>
+                </div>
+              </article>
+            ))}
+            {products.length === 0 && <p className="py-8 text-center text-sm text-zinc-500">No products yet.</p>}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="text-xs uppercase text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
                 <tr>
@@ -317,12 +322,7 @@ export default function AdminDashboard() {
                   <tr key={product._id}>
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={getProductImage(product.image) || getFallbackImage(product.name)}
-                          alt={product.name}
-                          className="h-12 w-12 rounded-lg object-cover bg-zinc-100 dark:bg-zinc-800"
-                          onError={(event) => { event.currentTarget.src = getFallbackImage(product.name); }}
-                        />
+                        <ProductImage src={getProductImage(product.image)} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />
                         <div className="min-w-0">
                           <p className="font-semibold text-zinc-900 dark:text-white truncate">{product.name}</p>
                           <p className="text-xs text-zinc-500 line-clamp-1">{product.description}</p>
@@ -334,11 +334,11 @@ export default function AdminDashboard() {
                     <td className="py-3 pr-4 nums">{product.stock || 0}</td>
                     <td className="py-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => startEdit(product)} aria-label="Edit product" className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 dark:border-zinc-700 hover:text-gold transition">
-                          <Pencil size={15} />
+                        <button onClick={() => startEdit(product)} aria-label="Edit product" className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 dark:border-zinc-700 hover:text-brand transition">
+                          <Pencil size={16} />
                         </button>
-                        <button onClick={() => deleteProduct(product)} aria-label="Delete product" className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 dark:border-zinc-700 hover:text-red-600 transition">
-                          <Trash2 size={15} />
+                        <button onClick={() => deleteProduct(product)} aria-label="Delete product" className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 dark:border-zinc-700 hover:text-brand transition">
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <section className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-card">
             <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white mb-4">
               {editingProduct ? "Edit Product" : "Add Product"}
@@ -391,13 +391,13 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 px-3 py-3 text-sm text-zinc-500 hover:text-gold transition">
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 px-3 py-3 text-sm text-zinc-500 hover:text-brand transition">
                 <ImagePlus size={18} />
                 <span className="truncate">{productForm.image?.name || "Choose product image"}</span>
                 <input type="file" name="image" accept="image/*" onChange={handleProductChange} className="sr-only" />
               </label>
               <button disabled={saving} className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-brand text-brand-fg px-5 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition">
-                {editingProduct ? <Save size={17} /> : <Plus size={17} />}
+                {editingProduct ? <Save size={18} /> : <Plus size={18} />}
                 {saving ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
               </button>
             </form>
@@ -408,8 +408,8 @@ export default function AdminDashboard() {
             <form onSubmit={submitCategory} className="space-y-4">
               <Field label="Name" name="name" value={categoryForm.name} onChange={handleCategoryChange} required />
               <Field label="Description" name="description" value={categoryForm.description} onChange={handleCategoryChange} required />
-              <button disabled={saving} className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-3 text-sm font-semibold text-gold hover:bg-gold/20 disabled:opacity-60 transition">
-                <Plus size={17} /> Add Category
+              <button disabled={saving} className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-brand/40 bg-sage/40 px-5 py-3 text-sm font-semibold text-brand hover:bg-sage/70 disabled:opacity-60 transition">
+                <Plus size={18} /> Add Category
               </button>
             </form>
           </section>
@@ -422,7 +422,6 @@ export default function AdminDashboard() {
             <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Sales analytics</h2>
             <p className="text-sm text-zinc-500">Daily, monthly and yearly reporting for every order.</p>
           </div>
-          <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Live reports</span>
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
@@ -502,7 +501,6 @@ export default function AdminDashboard() {
               <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Top Selling Products</h2>
               <p className="text-sm text-zinc-500">The best performing products by quantity sold.</p>
             </div>
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Hot items</span>
           </div>
           <div className="space-y-3">
             {summary.topProducts.map((product) => (
@@ -522,9 +520,8 @@ export default function AdminDashboard() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl font-bold text-zinc-900 dark:text-white">Recent Orders</h2>
-              <p className="text-sm text-zinc-500">Keep fulfillment moving with fast updates.</p>
+              <p className="text-sm text-zinc-500">Review recent customer orders and update their status.</p>
             </div>
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold">Live</span>
           </div>
           <div className="space-y-3">
             {summary.recentOrders.map((order) => (
@@ -538,7 +535,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1 text-xs text-zinc-500">
-                    <Clock3 size={13} /> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Recently placed"}
+                    <Clock3 size={16} /> {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Recently placed"}
                   </span>
                   <select
                     value={order.status || "pending"}

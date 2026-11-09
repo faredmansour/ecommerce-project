@@ -1,10 +1,12 @@
 import axios from "axios";
+import { expireLocalSession } from "../lib/authSession.js";
 
 const API_URL =
   import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/_/backend" : "http://localhost:8000");
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
 });
 
 // Attach JWT token to every request
@@ -16,14 +18,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 → redirect to login
+// Expire an invalid local session. ProtectedRoute owns navigation so it can
+// preserve the page the customer was trying to reach; public requests should
+// never force a guest into the login flow.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      expireLocalSession();
     }
     return Promise.reject(error);
   }
@@ -32,13 +34,24 @@ api.interceptors.response.use(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 // Backend returns: { message, token, user: { id, name, email, role } }
 export const authAPI = {
-  register: (name, email, password, role = "user") =>
-    api.post("/api/auth/register", { name, email, password, role }),
+  register: (name, email, password, returnTo) =>
+    api.post("/api/auth/register", { name, email, password, returnTo }),
 
   login: (email, password) =>
     api.post("/api/auth/login", { email, password }),
 
+  googleStart: (returnTo = "/") => api.post("/api/auth/google/start", { returnTo }),
+  googleLinkStart: (returnTo = "/account") => api.post("/api/auth/google/link/start", { returnTo }),
+  googleExchange: (code) => api.post("/api/auth/google/exchange", { code }),
+  appleStart: (returnTo = "/") => api.post("/api/auth/apple/start", { returnTo }),
+  appleLinkStart: (returnTo = "/account") => api.post("/api/auth/apple/link/start", { returnTo }),
+  appleExchange: (code) => api.post("/api/auth/apple/exchange", { code }),
+
   getMe: () => api.get("/api/auth/me"),
+  verifyEmail: (token) => api.post("/api/auth/verify-email", { token }),
+  resendVerification: (email, returnTo) => api.post("/api/auth/resend-verification", { email, returnTo }),
+  forgotPassword: (email) => api.post("/api/auth/forgot-password", { email }),
+  resetPassword: (token, password) => api.post("/api/auth/reset-password", { token, password }),
 };
 
 // ─── Products ────────────────────────────────────────────────────────────────
@@ -157,8 +170,11 @@ export const couponsAPI = {
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 export const paymentsAPI = {
-  createIntent: (amount, currency = "usd") =>
-    api.post("/api/payments/intent", { amount, currency }),
+  createIntent: (orderId, idempotencyKey) =>
+    api.post("/api/payments/intent", { orderId }, {
+      headers: { "Idempotency-Key": idempotencyKey },
+    }),
+  getById: (paymentId) => api.get(`/api/payments/${encodeURIComponent(paymentId)}`),
 };
 
 // ─── Addresses ─────────────────────────────────────────────────────────────────

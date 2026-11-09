@@ -9,7 +9,7 @@ const registerSchema = Joi.object({
       "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character"
     )
     .required(),
-  role: Joi.string().valid("user", "admin").default("user"),
+  returnTo: Joi.string().max(2048).optional(),
 });
 
 const loginSchema = Joi.object({
@@ -35,10 +35,28 @@ const passwordResetSchema = Joi.object({
     .required(),
 });
 
+const emailVerificationSchema = Joi.object({ token: Joi.string().max(256).required() });
+const verificationResendSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required(),
+  returnTo: Joi.string().max(2048).optional(),
+});
+
+const googleStartSchema = Joi.object({
+  returnTo: Joi.string().max(2048).optional(),
+});
+
+const googleExchangeSchema = Joi.object({
+  code: Joi.string().pattern(/^[a-f0-9]{64}$/).required(),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   refreshTokenSchema,
   passwordResetRequestSchema,
   passwordResetSchema,
+  emailVerificationSchema,
+  verificationResendSchema,
+  googleStartSchema,
+  googleExchangeSchema,
 };

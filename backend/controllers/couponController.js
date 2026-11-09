@@ -1,4 +1,5 @@
 const Coupon = require("../models/couponModel");
+const controllerError = require("../utils/controllerError");
 
 const applyCoupon = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ const applyCoupon = async (req, res) => {
 
     res.status(200).json({ status: "success", data: coupon });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

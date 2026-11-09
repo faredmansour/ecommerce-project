@@ -50,11 +50,11 @@ const definition = {
       RegisterInput: {
         type: "object",
         required: ["name", "email", "password"],
+        description: "Public registration always creates a customer account. Privileged roles are assigned outside this endpoint.",
         properties: {
           name: { type: "string", example: "Jane Doe" },
           email: { type: "string", format: "email" },
           password: { type: "string", description: "8+ chars, upper, lower, number, special" },
-          role: { type: "string", enum: ["user", "admin"], default: "user" },
         },
       },
       Product: {
@@ -306,10 +306,13 @@ const definition = {
       post: { tags: ["Coupons"], summary: "Validate a coupon code", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["code"], properties: { code: { type: "string" } } } } } }, responses: { 200: { description: "Valid" }, 404: { description: "Not found / expired" } } },
     },
     "/api/payments/intent": {
-      post: { tags: ["Payments"], summary: "Create a Stripe payment intent", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["amount"], properties: { amount: { type: "number" }, currency: { type: "string", default: "usd" } } } } } }, responses: { 200: { description: "clientSecret returned" } } },
+      post: { tags: ["Payments"], summary: "Legacy Stripe intent route (currently fail-closed)", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: false, properties: {} } } } }, responses: { 400: { description: "Unknown fields such as client amount/currency are rejected" }, 422: { description: "Order has no accepted server-side amount and currency snapshot" } } },
+    },
+    "/api/payments/{paymentId}": {
+      get: { tags: ["Payments"], summary: "Get an owner-scoped safe Payment view", security: [{ bearerAuth: [] }], parameters: [{ name: "paymentId", in: "path", required: true, schema: { type: "string", format: "uuid" } }], responses: { 200: { description: "Safe Payment DTO" }, 400: { description: "Invalid Payment ID" }, 404: { description: "Payment not found or not owned by caller" } } },
     },
     "/api/upload": {
-      post: { tags: ["Upload"], summary: "Upload an image", requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", properties: { image: { type: "string", format: "binary" } } } } } }, responses: { 200: { description: "Uploaded" } } },
+      post: { tags: ["Upload"], summary: "Upload an image (admin)", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", properties: { image: { type: "string", format: "binary" } } } } } }, responses: { 200: { description: "Uploaded" }, 401: { description: "Unauthorized" }, 403: { description: "Forbidden" } } },
     },
   },
 };

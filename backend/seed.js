@@ -177,7 +177,7 @@ async function seed() {
     const insertedProducts = await Products.insertMany(productsWithCatId);
     console.log(`✅ Inserted ${insertedProducts.length} products`);
 
-    console.log("\n🎉 Database seeded successfully!");
+    console.log(" Database seeded successfully!");
     console.log("─────────────────────────────────");
     insertedCategories.forEach((c) => console.log(`  📁 ${c.name}  (${c._id})`));
     console.log("─────────────────────────────────");

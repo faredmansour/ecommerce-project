@@ -1,9 +1,7 @@
 export const siteConfig = {
   brand: {
     name: "ALFREDO",
-    logoText: "A",
-    logoSrc: "",
-    tagline: "منتجات عالية الجودة بأفضل الأسعار",
+    tagline: "WHERE LEGENDS MEET TECHNOLOGY.",
   },
 
   // العملة: يمكنك إبقاؤها USD أو تحويلها لـ EGP / SAR حسب السوق المستهدف
@@ -16,26 +14,18 @@ export const siteConfig = {
   shippingFee: 5.99,
 
   announcement: {
-    enabled: true,
-    text: "شحن مجاني للطلبات لأكثر من $50 · إمكانية الإرجاع خلال 30 يومًا",
+    enabled: false,
+    text: "Free shipping on orders over $50",
   },
 
   hero: {
-    eyebrow: "تشكيلة جديدة",
-    title: "اكتشف منتجاتك المفضلة اليوم",
-    subtitle: "جودة ممتازة في جميع التصنيفات — تسوق أحدث المنتجات مع شحن سريع وتجربة تسوق آمنة.",
-    ctaLabel: "تسوق الآن",
+    eyebrow: "THE NEXT GENERATION",
+    title: "PLAY LIKE A LEGEND.",
+    secondaryTitle: "LIVE THE TECHNOLOGY.",
+    subtitle: "Discover premium gaming gear and next-level technology.",
+    ctaLabel: "EXPLORE COLLECTION",
     ctaHref: "/category",
-    secondaryCtaLabel: "تصفح التصنيفات",
-    image: "/Widgets.png",
   },
-
-  features: [
-    { icon: "Truck", title: "شحن مجاني", subtitle: "للطلبات فوق $50" },
-    { icon: "ShieldCheck", title: "دفع آمن", subtitle: "حماية بنسبة 100%" },
-    { icon: "RefreshCw", title: "إرجاع سهل", subtitle: "سياسة إرجاع 30 يومًا" },
-    { icon: "Headphones", title: "دعم 24/7", subtitle: "فريق جاهز للمساعدة" },
-  ],
 
   contact: {
     phone: "+20 100 000 0000",
@@ -51,14 +41,14 @@ export const siteConfig = {
 
   footer: {
     quickLinks: [
-      { label: "الرئيسية", href: "/home" },
-      { label: "جميع المنتجات", href: "/category" },
-      { label: "سلة المشتريات", href: "/cart" },
-      { label: "المفضلة", href: "/wishlist" },
+      { label: "Home", href: "/" },
+      { label: "All products", href: "/category" },
+      { label: "Shopping cart", href: "/cart" },
+      { label: "Wishlist", href: "/wishlist" },
     ],
     accountLinks: [
-      { label: "تسجيل الدخول", href: "/login" },
-      { label: "إنشاء حساب", href: "/register" },
+      { label: "Log in", href: "/login" },
+      { label: "Create account", href: "/register" },
     ],
   },
 };

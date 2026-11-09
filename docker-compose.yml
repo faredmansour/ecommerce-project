@@ -18,11 +18,13 @@ services:
       dockerfile: Dockerfile
     container_name: alfredo-backend
     restart: unless-stopped
+    # The API process also owns the webhook worker runtime.
     ports:
       - "8000:8000"
     environment:
       NODE_ENV: production
       PORT: 8000
+      PAYMENT_WEBHOOK_SHUTDOWN_TIMEOUT_MS: 10000
       JWT_SECRET: ${JWT_SECRET}
       DB_URL: mongodb://host.docker.internal:27017/e-commerce
       REDIS_URL: redis://cache:6379

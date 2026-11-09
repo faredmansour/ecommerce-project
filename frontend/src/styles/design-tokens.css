@@ -1,0 +1,132 @@
+:root {
+  color-scheme: light;
+
+  --color-brand: 116 36 61;
+  --color-brand-strong: 93 28 49;
+  --color-brand-soft: 246 233 238;
+  --color-brand-fg: 255 255 255;
+  --color-secondary: 23 69 56;
+  --color-secondary-soft: 232 241 236;
+
+  --color-page: 244 247 249;
+  --color-page-glow: 211 228 238;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 237 242 245;
+  --color-text: 25 26 29;
+  --color-muted: 93 105 112;
+  --color-border: 220 228 233;
+  --color-border-strong: 190 203 211;
+
+  --color-success: 22 101 52;
+  --color-success-bg: 240 253 244;
+  --color-success-border: 187 247 208;
+  --color-warning: 146 64 14;
+  --color-warning-bg: 255 251 235;
+  --color-warning-border: 253 230 138;
+  --color-danger: 185 28 28;
+  --color-danger-action: 185 28 28;
+  --color-danger-action-fg: 255 255 255;
+  --color-danger-bg: 254 242 242;
+  --color-danger-border: 254 202 202;
+  --color-info: 30 64 175;
+  --color-info-bg: 239 246 255;
+  --color-info-border: 191 219 254;
+
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-hero: clamp(2.75rem, 6vw, 5.5rem);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --line-height-tight: 1.1;
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-pill: 9999px;
+  --radius: var(--radius-md);
+
+  --shadow-card: 0 1px 3px rgb(25 26 29 / 0.06), 0 4px 12px rgb(25 26 29 / 0.04);
+  --shadow-hover: 0 6px 16px rgb(25 26 29 / 0.1);
+  --shadow-overlay: 0 12px 30px rgb(25 26 29 / 0.14);
+
+  --container-content: 80rem;
+  --container-reading: 46rem;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 96rem;
+
+  --motion-fast: 140ms;
+  --motion-standard: 220ms;
+  --motion-slow: 360ms;
+  --motion-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --focus-ring: 0 0 0 3px rgb(116 36 61 / 0.28);
+  --focus-outline: 2px solid rgb(var(--color-brand));
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-brand: 222 166 184;
+  --color-brand-strong: 235 190 204;
+  --color-brand-soft: 63 36 45;
+  --color-brand-fg: 25 26 29;
+  --color-secondary: 123 180 153;
+  --color-secondary-soft: 31 57 47;
+
+  --color-page: 17 24 29;
+  --color-page-glow: 42 71 83;
+  --color-surface: 24 34 40;
+  --color-surface-muted: 32 45 52;
+  --color-text: 246 244 242;
+  --color-muted: 177 190 195;
+  --color-border: 49 67 76;
+  --color-border-strong: 68 88 97;
+
+  --color-success: 134 239 172;
+  --color-success-bg: 20 48 31;
+  --color-success-border: 35 89 54;
+  --color-warning: 253 230 138;
+  --color-warning-bg: 61 45 18;
+  --color-warning-border: 124 91 29;
+  --color-danger: 252 165 165;
+  --color-danger-action: 127 39 39;
+  --color-danger-action-fg: 255 255 255;
+  --color-danger-bg: 63 25 25;
+  --color-danger-border: 127 39 39;
+  --color-info: 147 197 253;
+  --color-info-bg: 24 39 64;
+  --color-info-border: 37 74 132;
+
+  --focus-ring: 0 0 0 3px rgb(222 166 184 / 0.32);
+  --focus-outline: 2px solid rgb(var(--color-brand));
+}

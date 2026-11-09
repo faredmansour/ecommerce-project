@@ -1,11 +1,12 @@
 const Wishlist = require("../models/wishlistModel");
+const controllerError = require("../utils/controllerError");
 
 const getWishlist = async (req, res) => {
   try {
     const wishlist = await Wishlist.findOne({ user: req.user.id });
     res.status(200).json({ data: wishlist?.items || [] });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -29,7 +30,7 @@ const addWishlistItem = async (req, res) => {
     await wishlist.save();
     res.status(200).json({ status: "success", data: wishlist.items });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 
@@ -44,7 +45,7 @@ const removeWishlistItem = async (req, res) => {
     await wishlist.save();
     res.status(200).json({ status: "success", data: wishlist.items });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({ status: "error", message: controllerError(err, req) });
   }
 };
 

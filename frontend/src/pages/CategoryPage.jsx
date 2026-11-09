@@ -1,157 +1,357 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { productsAPI, categoriesAPI } from "../services/api";
-import ProductCard from "../components/ProductCard";
 import { SlidersHorizontal, X } from "lucide-react";
+import { EmptyState, Input, LoadingState, Pagination, Select } from "../components/ui";
+import ProductCard from "../components/ProductCard";
+import { categoriesAPI, productsAPI } from "../services/api";
+
+const PAGE_SIZE = 12;
 
 export default function CategoryPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategory = searchParams.get("cat") || "";
   const searchQuery = searchParams.get("search") || "";
 
-  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [categoryError, setCategoryError] = useState("");
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [sortBy, setSortBy] = useState("default");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const activeCategory = categories.find((category) => category.name === selectedCategory) || null;
 
   useEffect(() => {
-    categoriesAPI.getAllRaw().then((res) => {
-      const raw = res.data;
-      if (Array.isArray(raw)) {
-        setCategories(raw);
-        if (selectedCategory) {
-          const found = raw.find((c) => c.name === selectedCategory);
-          if (found) setActiveCategory(found);
+    let isCurrent = true;
+
+    categoriesAPI.getAllRaw()
+      .then(({ data }) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Category response was not a list.");
         }
-      }
-    }).catch(() => {});
+        if (isCurrent) {
+          setCategories(data);
+          setCategoryError("");
+        }
+      })
+      .catch((requestError) => {
+        if (isCurrent) {
+          setCategoryError(requestError.response?.data?.message || requestError.message || "Could not load categories.");
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setCategoriesLoaded(true);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedCategory && categories.length > 0) {
-      setActiveCategory(categories.find((c) => c.name === selectedCategory) || null);
-    } else if (!selectedCategory) {
-      setActiveCategory(null);
-    }
-  }, [selectedCategory, categories]);
+    if (selectedCategory && !categoriesLoaded) return undefined;
 
-  useEffect(() => {
+    let isCurrent = true;
     setLoading(true);
     setError("");
-    productsAPI
-      .getAll(activeCategory?._id || undefined, searchQuery || undefined)
-      .then((res) => setProducts(res.data))
-      .catch((err) => {
-        setProducts([]);
-        setError(err.response?.data?.message || "Could not load products.");
+
+    productsAPI.getAll(activeCategory?._id || undefined, searchQuery || undefined)
+      .then(({ data }) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Product response was not a list.");
+        }
+        if (isCurrent) setProducts(data);
       })
-      .finally(() => setLoading(false));
-  }, [activeCategory, searchQuery]);
+      .catch((requestError) => {
+        if (isCurrent) {
+          setProducts([]);
+          setError(requestError.response?.data?.message || requestError.message || "Could not load products.");
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setLoading(false);
+      });
 
-  const sortedProducts = [...products].sort((a, b) => {
-    switch (sortBy) {
-      case "price-low": return a.price - b.price;
-      case "price-high": return b.price - a.price;
-      case "rating": return (b.rating || 0) - (a.rating || 0);
-      case "name": return a.name.localeCompare(b.name);
-      default: return 0;
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeCategory?._id, categoriesLoaded, loadAttempt, searchQuery, selectedCategory]);
+
+  const filteredProducts = useMemo(() => {
+    const min = priceMin === "" ? null : Number(priceMin);
+    const max = priceMax === "" ? null : Number(priceMax);
+    const filtered = products.filter((product) => {
+      const price = Number(product.price);
+      return (min === null || price >= min)
+        && (max === null || price <= max)
+        && (!inStockOnly || Number(product.stock) > 0);
+    });
+
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return Number(a.price) - Number(b.price);
+        case "price-high":
+          return Number(b.price) - Number(a.price);
+        case "rating":
+          return Number(b.rating || 0) - Number(a.rating || 0);
+        case "name":
+          return String(a.name || "").localeCompare(String(b.name || ""));
+        default:
+          return 0;
+      }
+    });
+  }, [inStockOnly, priceMax, priceMin, products, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [sortBy, priceMin, priceMax, inStockOnly, activeCategory?._id, searchQuery]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const selectCategory = (category) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (category) {
+      nextParams.set("cat", category.name);
+    } else {
+      nextParams.delete("cat");
     }
-  });
+    setSearchParams(nextParams);
+  };
 
-  const chip = (active) =>
-    `w-full text-left px-3 py-2 text-sm rounded-lg transition ${
-      active
-        ? "bg-gold/15 text-gold font-semibold"
-        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-    }`;
+  const clearFilters = () => {
+    setPriceMin("");
+    setPriceMax("");
+    setInStockOnly(false);
+    setSortBy("default");
+    setPage(1);
+    selectCategory(null);
+  };
+
+  const activeFilters = [
+    ...(activeCategory ? [{
+      key: "category",
+      label: activeCategory.name,
+      onRemove: () => selectCategory(null),
+    }] : []),
+    ...(priceMin ? [{
+      key: "minimum-price",
+      label: `Min: ${priceMin}`,
+      onRemove: () => setPriceMin(""),
+    }] : []),
+    ...(priceMax ? [{
+      key: "maximum-price",
+      label: `Max: ${priceMax}`,
+      onRemove: () => setPriceMax(""),
+    }] : []),
+    ...(inStockOnly ? [{
+      key: "in-stock",
+      label: "In stock",
+      onRemove: () => setInStockOnly(false),
+    }] : []),
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+    <div className="mx-auto max-w-content px-4 py-6 sm:py-8">
+      <header className="mb-5 flex flex-col gap-4 border-b border-line pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-brand">Shop</p>
+          <h1 className="font-display text-2xl font-bold text-ink dark:text-white sm:text-3xl">
             {searchQuery ? `Search: “${searchQuery}”` : activeCategory?.name || "All Products"}
           </h1>
-          <p className="text-sm text-zinc-500 mt-1 nums">{sortedProducts.length} products found</p>
+          <p className="mt-1 text-sm text-muted nums" aria-live="polite">
+            {filteredProducts.length} products
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal size={16} className="text-zinc-400" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold"
-          >
-            <option value="default">Sort: Featured</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="rating">Highest Rated</option>
-            <option value="name">Name A–Z</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="flex gap-8">
-        {/* Sidebar */}
-        <aside className="w-52 shrink-0 hidden md:block">
-          <div className="sticky top-28">
-            <h3 className="font-display font-bold text-zinc-900 dark:text-white mb-3">Categories</h3>
-            <div className="space-y-1">
-              <button onClick={() => setActiveCategory(null)} className={chip(!activeCategory)}>
-                All Products
+        <div className="flex flex-col gap-3 sm:items-end">
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <SlidersHorizontal size={16} aria-hidden="true" />
+            <span>Sort by</span>
+            <Select
+              aria-label="Sort products"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              className="min-w-40 bg-surface px-3 py-2 text-ink"
+            >
+              <option value="default">Sort: Featured</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+              <option value="name">Name A–Z</option>
+            </Select>
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              aria-label="Minimum price"
+              placeholder="Min price"
+              value={priceMin}
+              onChange={(event) => setPriceMin(event.target.value)}
+              className="w-28"
+            />
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              aria-label="Maximum price"
+              placeholder="Max price"
+              value={priceMax}
+              onChange={(event) => setPriceMax(event.target.value)}
+              className="w-28"
+            />
+            <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
+              <input
+                type="checkbox"
+                checked={inStockOnly}
+                onChange={(event) => setInStockOnly(event.target.checked)}
+                className="h-4 w-4 accent-brand"
+              />
+              In stock only
+            </label>
+            {activeFilters.length === 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="min-h-11 rounded px-2 py-1 text-sm text-ink transition-colors hover:bg-brand-soft"
+              >
+                Clear all filters
               </button>
-              {categories.map((cat) => (
-                <button key={cat._id} onClick={() => setActiveCategory(cat)} className={chip(activeCategory?._id === cat._id)}>
-                  {cat.name}
-                </button>
-              ))}
-            </div>
+            )}
           </div>
+        </div>
+      </header>
+
+      <nav aria-label="Product categories" className="mb-4 flex gap-2 overflow-x-auto pb-2 md:hidden">
+        <button
+          type="button"
+          aria-pressed={!activeCategory}
+          onClick={() => selectCategory(null)}
+          className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${!activeCategory ? "border-brand bg-brand text-brand-fg" : "border-line bg-surface text-ink hover:border-brand hover:text-brand"}`}
+        >
+          All Products
+        </button>
+        {categories.map((category) => {
+          const active = activeCategory?._id === category._id;
+          return (
+            <button
+              key={category._id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => selectCategory(category)}
+              className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${active ? "border-brand bg-brand text-brand-fg" : "border-line bg-surface text-ink hover:border-brand hover:text-brand"}`}
+            >
+              {category.name}
+            </button>
+          );
+        })}
+      </nav>
+
+      {activeFilters.length > 0 && (
+        <div aria-label="Applied filters" className="mb-5 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted">
+            Applied filters ({activeFilters.length})
+          </span>
+          {activeFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={filter.onRemove}
+              aria-label={`Remove ${filter.label} filter`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3 text-sm font-medium text-ink transition-colors hover:border-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              {filter.label}
+              <X size={14} aria-hidden="true" />
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="min-h-11 px-2 text-sm font-medium text-muted underline underline-offset-2 transition-colors hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      <div className="grid items-start gap-6 md:grid-cols-[200px_minmax(0,1fr)] md:gap-8">
+        <aside aria-label="Product categories" className="hidden border-r border-line pr-4 md:block">
+          <h2 className="mb-3 font-display text-base font-bold text-ink dark:text-white">Categories</h2>
+          <nav className="space-y-1">
+            <button
+              type="button"
+              aria-pressed={!activeCategory}
+              onClick={() => selectCategory(null)}
+              className={`min-h-11 w-full border-l-2 px-3 text-left text-sm transition-colors duration-200 ${!activeCategory ? "border-brand bg-brand-soft font-semibold text-ink" : "border-transparent text-muted hover:bg-surface-muted hover:text-ink"}`}
+            >
+              All Products
+            </button>
+            {categories.map((category) => {
+              const active = activeCategory?._id === category._id;
+              return (
+                <button
+                  key={category._id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => selectCategory(category)}
+                  className={`min-h-11 w-full border-l-2 px-3 text-left text-sm transition-colors duration-200 ${active ? "border-brand bg-brand-soft font-semibold text-ink" : "border-transparent text-muted hover:bg-surface-muted hover:text-ink"}`}
+                >
+                  {category.name}
+                </button>
+              );
+            })}
+          </nav>
         </aside>
 
-        {/* Grid */}
-        <div className="flex-1 min-w-0">
-          {activeCategory && (
-            <div className="mb-4">
-              <span className="inline-flex items-center gap-1.5 text-sm bg-gold/15 text-gold px-3 py-1 rounded-full">
-                {activeCategory.name}
-                <button onClick={() => setActiveCategory(null)} aria-label="Clear filter"><X size={14} /></button>
-              </span>
+        <section aria-label="Products" className="min-w-0">
+          {categoryError && (
+            <div role="alert" className="mb-4 border border-state-danger-border bg-state-danger-bg px-4 py-3 text-sm text-state-danger">
+              Could not load categories: {categoryError}
             </div>
           )}
 
           {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-zinc-200 dark:bg-zinc-800" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-4/5" />
-                    <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded mt-3" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <LoadingState label="Loading products" />
           ) : error ? (
-            <div className="text-center py-20 rounded-2xl border border-dashed border-red-300 dark:border-red-900">
-              <p className="text-red-600 dark:text-red-400 text-lg font-medium">{error}</p>
-              <p className="text-zinc-400 text-sm mt-1">Refresh the page or try again in a moment.</p>
+            <div role="alert" className="border border-state-danger-border bg-state-danger-bg px-4 py-5 text-sm text-state-danger">
+              <p className="font-semibold">{error}</p>
+              <button
+                type="button"
+                onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                className="mt-3 min-h-11 rounded px-3 font-semibold underline underline-offset-2"
+              >
+                Try again
+              </button>
             </div>
-          ) : sortedProducts.length === 0 ? (
-            <div className="text-center py-20 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
-              <p className="text-zinc-600 dark:text-zinc-300 text-lg font-medium">No products found</p>
-              <p className="text-zinc-400 text-sm mt-1">Try adjusting your search or filter.</p>
-            </div>
+          ) : filteredProducts.length === 0 ? (
+            <EmptyState
+              title="No products found"
+              description="Try adjusting your filters or search."
+              className="border border-dashed border-line bg-surface px-4"
+            />
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
-              {sortedProducts.map((product) => (
-                <ProductCard key={product._id || product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                {paginatedProducts.map((product) => (
+                  <ProductCard key={product._id || product.id} product={product} />
+                ))}
+              </div>
+              <Pagination page={page} pages={totalPages} onChange={setPage} className="mt-4" />
+            </>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

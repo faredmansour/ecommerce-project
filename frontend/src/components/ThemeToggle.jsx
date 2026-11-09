@@ -7,7 +7,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-sm hover:border-gold hover:text-gold transition-colors dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+      className="inline-flex items-center justify-center rounded-lg border border-line bg-surface p-2 text-ink transition-colors hover:border-brand hover:text-brand"
       aria-label="Toggle dark mode"
     >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

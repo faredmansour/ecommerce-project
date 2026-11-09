@@ -1,22 +1,36 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Mail, Lock, Eye, EyeOff, User as UserIcon, ArrowRight, ShieldCheck } from "lucide-react";
+import { useCart } from "../context/CartContext";
+import { getAuthReturnPath } from "../lib/authReturnPath";
+import { Mail, Lock, Eye, EyeOff, User as UserIcon, ArrowRight } from "lucide-react";
 import BrandLogo from "../components/BrandLogo";
-import { siteConfig } from "../config/site.config";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import AppleSignInButton from "../components/AppleSignInButton";
+import { Button } from "../components/ui";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [developmentVerificationUrl, setDevelopmentVerificationUrl] = useState("");
 
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
+  const { mergeStatus, syncError, retryMerge } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = getAuthReturnPath(location.state?.from, "/home");
+
+  useEffect(() => {
+    if (isAuthenticated && mergeStatus === "ready") {
+      navigate(returnTo, { replace: true });
+    }
+  }, [isAuthenticated, mergeStatus, navigate, returnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,8 +45,9 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await register(name, email, password, role);
-      navigate(role === "admin" ? "/admin" : "/home");
+      const response = await register(name, email, password, returnTo);
+      setDevelopmentVerificationUrl(response.developmentVerificationUrl || "");
+      setSubmitted(true);
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.detail || "Registration failed.");
     } finally {
@@ -40,72 +55,79 @@ export default function RegisterPage() {
     }
   };
 
-  const inputCls =
-    "w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold transition";
+  const inputCls = "ui-control h-11 w-full pl-10 pr-4 text-sm";
+
+  if (submitted) return <div className="flex min-h-screen items-center justify-center bg-canvas px-4"><section className="w-full max-w-md rounded-md border border-line bg-surface p-8 text-center shadow-card"><BrandLogo to="/home" /><h1 className="mt-6 text-2xl font-bold">Check your email</h1><p className="mt-3 text-sm text-muted">If the address can be verified, you’ll receive a link. After verification, sign in to continue.</p>{developmentVerificationUrl && <a className="mt-5 inline-block font-semibold text-brand underline" href={developmentVerificationUrl}>Verify your email locally</a>}<Link className="mt-6 inline-block font-semibold text-brand underline" to={`/login?returnTo=${encodeURIComponent(returnTo)}`}>Continue to sign in</Link></section></div>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-4">
-      <div className="w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-3xl shadow-hover overflow-hidden grid md:grid-cols-2">
-        {/* Brand panel */}
-        <div className="hidden md:flex relative flex-col items-center justify-center bg-brand text-brand-fg p-10 overflow-hidden order-1">
-          <div className="absolute -left-16 -top-16 h-56 w-56 rounded-full bg-gold/20 blur-3xl" />
-          <div className="absolute -right-10 bottom-0 h-44 w-44 rounded-full bg-gold/10 blur-3xl" />
-          <div className="relative text-center">
-            <h2 className="font-display text-3xl font-extrabold mb-3">Join {siteConfig.brand.name}</h2>
-            <p className="opacity-75 max-w-xs mx-auto">Create an account to save favorites, track orders, and unlock member deals.</p>
-          </div>
-        </div>
-
-        {/* Form */}
-        <div className="p-8 sm:p-10 order-2">
-          <div className="mb-8 md:hidden"><BrandLogo to="/home" /></div>
-          <h1 className="font-display text-2xl font-extrabold text-zinc-900 dark:text-white mb-1">Create account</h1>
-          <p className="text-sm text-zinc-500 mb-6">It only takes a minute.</p>
+    <div className="flex min-h-screen items-start justify-center bg-canvas px-4 py-8 sm:items-center sm:py-12">
+      <div className="w-full max-w-md rounded-md border border-line bg-surface p-6 shadow-card sm:p-8">
+          <div className="mb-7"><BrandLogo to="/home" /></div>
+          <h1 className="mb-1 font-display text-2xl font-bold text-ink dark:text-white">Create account</h1>
+          <p className="mb-6 text-sm text-muted">Create an account to save favorites and track orders.</p>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg text-sm text-red-600 dark:text-red-400">
+            <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
               {error}
+            </div>
+          )}
+          {isAuthenticated && mergeStatus === "syncing" && (
+            <p role="status" className="mb-4 text-sm text-muted">Your account is ready. Synchronizing your saved cart…</p>
+          )}
+          {isAuthenticated && mergeStatus === "failed" && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+              <p role="alert">{syncError || "Your saved cart could not be synchronized. Your guest items are still saved."}</p>
+              <button type="button" onClick={retryMerge} className="mt-3 font-semibold underline">
+                Retry cart synchronization
+              </button>
+              <Link to="/cart" className="ml-4 font-semibold underline">Review saved cart</Link>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <UserIcon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" required autoComplete="name" className={inputCls} />
+            <div>
+              <label htmlFor="register-name" className="mb-1.5 block text-sm font-medium text-ink dark:text-white">Full name</label>
+              <div className="relative">
+                <UserIcon size={18} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input id="register-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" className={inputCls} />
+              </div>
             </div>
-            <div className="relative">
-              <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required autoComplete="email" className={inputCls} />
+            <div>
+              <label htmlFor="register-email" className="mb-1.5 block text-sm font-medium text-ink dark:text-white">Email</label>
+              <div className="relative">
+                <Mail size={18} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input id="register-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={inputCls} />
+              </div>
             </div>
-            <div className="relative">
-              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required autoComplete="new-password" className={`${inputCls} pr-10`} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password" className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            <div>
+              <label htmlFor="register-password" className="mb-1.5 block text-sm font-medium text-ink dark:text-white">Password</label>
+              <div className="relative">
+                <Lock size={18} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input id="register-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" className={`${inputCls} pr-11`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-sm text-muted hover:bg-surface-muted hover:text-ink">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
-            <div className="relative">
-              <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm password" required autoComplete="new-password" className={inputCls} />
+            <div>
+              <label htmlFor="register-confirm-password" className="mb-1.5 block text-sm font-medium text-ink dark:text-white">Confirm password</label>
+              <div className="relative">
+                <Lock size={18} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input id="register-confirm-password" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" className={inputCls} />
+              </div>
             </div>
-            <div className="relative">
-              <ShieldCheck size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputCls} appearance-none`}>
-                <option value="user">User account</option>
-                <option value="admin">Admin account</option>
-              </select>
-            </div>
-
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 bg-brand text-brand-fg rounded-full font-semibold hover:opacity-90 active:scale-[0.99] transition disabled:opacity-60">
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Creating…" : <>Create Account <ArrowRight size={16} /></>}
-            </button>
+            </Button>
           </form>
 
-          <p className="text-sm text-zinc-500 mt-6 text-center">
+          <GoogleSignInButton returnTo={returnTo} />
+          <AppleSignInButton returnTo={returnTo} />
+
+          <p className="mt-6 text-center text-sm text-muted">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-gold hover:underline">Login</Link>
+            <Link to="/login" state={location.state} className="font-semibold text-brand hover:underline">Login</Link>
           </p>
-        </div>
       </div>
     </div>
   );

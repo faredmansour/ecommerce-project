@@ -20,6 +20,12 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /usr/src/app ./
 
+RUN mkdir -p /usr/src/app/uploadimage /usr/src/app/logs \
+	&& chown -R node:node /usr/src/app \
+	&& chmod 750 /usr/src/app/uploadimage /usr/src/app/logs
+
+USER node
+
 EXPOSE 8000
 
 CMD ["node", "server.js"]

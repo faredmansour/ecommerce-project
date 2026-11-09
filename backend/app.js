@@ -11,6 +11,9 @@ const mongoose = require("mongoose");
 const swaggerUi = require("swagger-ui-express");
 
 const logger = require("./utils/logger");
+const { logRequest, requestContext } = require("./utils/requestLogging");
+const { createDatabaseOperationRegistry } = require("./services/databaseOperationRegistry");
+const { createHttpRequestLifecycle } = require("./services/httpRequestLifecycle");
 const swaggerSpec = require("./utils/swagger");
 const errorHandler = require("./middlewares/errorHandler");
 
@@ -23,13 +26,22 @@ const ordersRouter = require("./routers/ordersRouter");
 const addressRouter = require("./routers/addressRouter");
 const couponRouter = require("./routers/couponRouter");
 const paymentRouter = require("./routers/paymentRouter");
+const paymentWebhookRouter = require("./routers/paymentWebhookRouter");
 const uploadRouter = require("./routers/uploadRouter");
+const brandRouter = require("./routers/brandRouter");
 const adminRouter = require("./routers/adminRouter");
+const pricingRouter = require("./routers/pricingRouter");
+const { webhookService } = require("./controllers/paymentWebhookController");
 
 const app = express();
+app.use(requestContext);
+const databaseOperationRegistry = createDatabaseOperationRegistry({ logger });
+const requestLifecycle = createHttpRequestLifecycle({ operationRegistry: databaseOperationRegistry });
+webhookService.queue.runtime.setOperationRegistry(databaseOperationRegistry);
 
 // --- Security & core middleware ---
 app.disable("x-powered-by");
+app.use(requestLifecycle.middleware);
 app.use(helmet());
 app.use(compression());
 app.use((req, res, next) => {
@@ -38,11 +50,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS: allow a comma-separated list of origins from env, fall back to the dev client.
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+// CORS: allow configured origins and loopback aliases for local development.
+const configuredOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
+const localDevelopmentOrigins = process.env.NODE_ENV === "production"
+  ? []
+  : [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+  ];
+const allowedOrigins = [...new Set([...configuredOrigins, ...localDevelopmentOrigins])];
 
 app.use(
   cors({
@@ -55,7 +76,14 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json({
+  limit: "10kb",
+  verify(req, res, buffer) {
+    if (req.originalUrl.startsWith("/api/payments/webhooks/")) {
+      req.rawBody = Buffer.from(buffer);
+    }
+  },
+}));
 
 // NoSQL-injection protection. Applied in place to req.body/req.params only —
 // Express 5 makes req.query read-only, so reassigning it (the library default)
@@ -92,18 +120,22 @@ if (process.env.NODE_ENV === "production") {
 
 // --- Request logging ---
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
+  logRequest(req, logger);
   next();
 });
 
 // --- Health check ---
 app.get("/health", (req, res) => {
   const dbStates = ["disconnected", "connected", "connecting", "disconnecting"];
-  res.status(200).json({
-    status: "ok",
+  const db = dbStates[mongoose.connection.readyState] || "unknown";
+  const workerStatus = webhookService.queue.getStatus();
+  const healthy = db === "connected" && workerStatus.state === "running";
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? "ok" : "degraded",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    db: dbStates[mongoose.connection.readyState] || "unknown",
+    db,
+    paymentWebhookWorker: workerStatus,
   });
 });
 
@@ -118,15 +150,20 @@ app.use("/api", uploadRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
+app.use("/api/brands", brandRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
+app.use("/api/payments/webhooks", paymentWebhookRouter);
 app.use("/api/payments", paymentRouter);
+app.use("/api/pricing", pricingRouter);
 app.use("/api/admin", adminRouter);
 
 // --- Error handler (last) ---
 app.use(errorHandler);
 
 module.exports = app;
+module.exports.requestLifecycle = requestLifecycle;
+module.exports.databaseOperationRegistry = databaseOperationRegistry;

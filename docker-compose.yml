@@ -4,42 +4,57 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:8000/api
+        VITE_API_URL: ""
     container_name: alfredo-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
-      - backend
-
+      backend:
+        condition: service_healthy
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: alfredo-backend
     restart: unless-stopped
-    # The API process also owns the webhook worker runtime.
-    ports:
-      - "8000:8000"
     environment:
       NODE_ENV: production
       PORT: 8000
+      PREVIEW_MODE: "true"
       PAYMENT_WEBHOOK_SHUTDOWN_TIMEOUT_MS: 10000
-      JWT_SECRET: ${JWT_SECRET}
-      DB_URL: mongodb://host.docker.internal:27017/e-commerce
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      DB_URL: ${DB_URL:?Set DB_URL to a dedicated preview database}
       REDIS_URL: redis://cache:6379
+      CLIENT_URL: ${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL}
+      FRONTEND_URL: ${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL}
+      PAYMOB_ENVIRONMENT: TEST
+      PAYMOB_TEST_EXECUTION_ENABLED: "false"
+      PAYMOB_TEST_TRANSACTION_INQUIRY_ENABLED: "false"
+    expose:
+      - "8000"
     depends_on:
-      - cache
-
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
   cache:
     image: redis:7-alpine
     container_name: alfredo-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     volumes:
       - redis_data:/data
-
 volumes:
   redis_data:
     driver: local

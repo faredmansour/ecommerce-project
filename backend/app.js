@@ -35,6 +35,54 @@ const { webhookService } = require("./controllers/paymentWebhookController");
 const { blockInPreview, blockMutationsInPreview, isPreviewMode } = require("./middlewares/previewMode");
 
 const app = express();
+
+// Vercel runs this app as a serverless function, so the persistent server.js
+// lifecycle is intentionally bypassed. Establish and reuse a MongoDB connection
+// before handling each request; never start the persistent webhook worker here.
+let vercelDatabaseConnectionPromise = null;
+
+async function ensureVercelDatabaseConnection() {
+  if (mongoose.connection.readyState === 1) return;
+
+  if (!process.env.DB_URL) {
+    throw Object.assign(new Error("DB_URL is not configured."), { code: "DATABASE_URL_MISSING" });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET || "";
+  if (jwtSecret.length < 32 || jwtSecret.toLowerCase().includes("change-me")) {
+    throw Object.assign(new Error("JWT_SECRET is invalid."), { code: "JWT_SECRET_INVALID" });
+  }
+
+  if (!vercelDatabaseConnectionPromise) {
+    vercelDatabaseConnectionPromise = mongoose.connect(process.env.DB_URL, {
+      serverSelectionTimeoutMS: 10000,
+    }).catch((error) => {
+      vercelDatabaseConnectionPromise = null;
+      throw error;
+    });
+  }
+
+  await vercelDatabaseConnectionPromise;
+}
+
+if (process.env.VERCEL === "1" || process.env.VERCEL === "true") {
+  app.use(async (req, res, next) => {
+    try {
+      await ensureVercelDatabaseConnection();
+      return next();
+    } catch (error) {
+      const errorCode = typeof error?.code === "string" && /^[A-Z0-9_]{1,80}$/.test(error.code)
+        ? error.code
+        : "DATABASE_UNAVAILABLE";
+      logger.error(JSON.stringify({ event: "vercel.request_initialization_failed", errorCode }));
+      return res.status(503).json({
+        status: "error",
+        code: errorCode,
+        message: "The API is temporarily unavailable. Check server configuration.",
+      });
+    }
+  });
+}
 app.use(requestContext);
 const databaseOperationRegistry = createDatabaseOperationRegistry({ logger });
 const requestLifecycle = createHttpRequestLifecycle({ operationRegistry: databaseOperationRegistry });

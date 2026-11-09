@@ -23,6 +23,7 @@ async function createUser(suffix = "owner") {
     email: `payment-${suffix}-${Date.now()}@example.com`,
     password: "Passw0rd!",
     role: "user",
+    emailVerified: true,
   });
   return {
     user,

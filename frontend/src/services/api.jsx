@@ -2,7 +2,7 @@ import axios from "axios";
 import { expireLocalSession } from "../lib/authSession.js";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/_/backend" : "http://localhost:8000");
+  import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 const api = axios.create({
   baseURL: API_URL,

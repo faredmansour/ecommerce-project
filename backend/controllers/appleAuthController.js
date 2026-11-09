@@ -61,7 +61,7 @@ const beginAppleFlow = async (req, res, intent, user) => {
       nonce,
       exchangeBindingHash: hashToken(exchangeBinding),
       intent,
-      user: user?._id,
+      user: user?.id,
       authVersion: user ? req.user.sessionVersion || 0 : undefined,
       returnTo,
       expiresAt: new Date(Date.now() + FLOW_TTL_MS),

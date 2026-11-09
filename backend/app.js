@@ -32,8 +32,57 @@ const brandRouter = require("./routers/brandRouter");
 const adminRouter = require("./routers/adminRouter");
 const pricingRouter = require("./routers/pricingRouter");
 const { webhookService } = require("./controllers/paymentWebhookController");
+const { blockInPreview, blockMutationsInPreview, isPreviewMode } = require("./middlewares/previewMode");
 
 const app = express();
+
+// Vercel runs this app as a serverless function, so the persistent server.js
+// lifecycle is intentionally bypassed. Establish and reuse a MongoDB connection
+// before handling each request; never start the persistent webhook worker here.
+let vercelDatabaseConnectionPromise = null;
+
+async function ensureVercelDatabaseConnection() {
+  if (mongoose.connection.readyState === 1) return;
+
+  if (!process.env.DB_URL) {
+    throw Object.assign(new Error("DB_URL is not configured."), { code: "DATABASE_URL_MISSING" });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET || "";
+  if (jwtSecret.length < 32 || jwtSecret.toLowerCase().includes("change-me")) {
+    throw Object.assign(new Error("JWT_SECRET is invalid."), { code: "JWT_SECRET_INVALID" });
+  }
+
+  if (!vercelDatabaseConnectionPromise) {
+    vercelDatabaseConnectionPromise = mongoose.connect(process.env.DB_URL, {
+      serverSelectionTimeoutMS: 10000,
+    }).catch((error) => {
+      vercelDatabaseConnectionPromise = null;
+      throw error;
+    });
+  }
+
+  await vercelDatabaseConnectionPromise;
+}
+
+if (process.env.VERCEL === "1" || process.env.VERCEL === "true") {
+  app.use(async (req, res, next) => {
+    try {
+      await ensureVercelDatabaseConnection();
+      return next();
+    } catch (error) {
+      const errorCode = typeof error?.code === "string" && /^[A-Z0-9_]{1,80}$/.test(error.code)
+        ? error.code
+        : "DATABASE_UNAVAILABLE";
+      logger.error(JSON.stringify({ event: "vercel.request_initialization_failed", errorCode }));
+      return res.status(503).json({
+        status: "error",
+        code: errorCode,
+        message: "The API is temporarily unavailable. Check server configuration.",
+      });
+    }
+  });
+}
 app.use(requestContext);
 const databaseOperationRegistry = createDatabaseOperationRegistry({ logger });
 const requestLifecycle = createHttpRequestLifecycle({ operationRegistry: databaseOperationRegistry });
@@ -128,8 +177,10 @@ app.use((req, res, next) => {
 app.get("/health", (req, res) => {
   const dbStates = ["disconnected", "connected", "connecting", "disconnecting"];
   const db = dbStates[mongoose.connection.readyState] || "unknown";
-  const workerStatus = webhookService.queue.getStatus();
-  const healthy = db === "connected" && workerStatus.state === "running";
+  const workerStatus = isPreviewMode()
+    ? { state: "disabled", recoveryActive: false, activeEventCount: 0 }
+    : webhookService.queue.getStatus();
+  const healthy = db === "connected" && (isPreviewMode() || workerStatus.state === "running");
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "ok" : "degraded",
     uptime: process.uptime(),
@@ -147,6 +198,10 @@ app.get("/api/docs.json", (req, res) => res.json(swaggerSpec));
 app.use("/uploadimage", express.static("uploadimage"));
 app.use("/api", uploadRouter);
 
+app.use("/api/auth/google", blockInPreview("Google authentication"));
+app.use("/api/auth/apple", blockInPreview("Apple authentication"));
+app.use("/api/orders", blockMutationsInPreview("Order creation and management"));
+app.use("/api/payments", blockInPreview("Payments"));
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
@@ -156,7 +211,7 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
-app.use("/api/payments/webhooks", paymentWebhookRouter);
+app.use("/api/payments/webhooks", blockInPreview("Payment webhooks"), paymentWebhookRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/pricing", pricingRouter);
 app.use("/api/admin", adminRouter);

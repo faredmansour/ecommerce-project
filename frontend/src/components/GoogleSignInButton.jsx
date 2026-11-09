@@ -2,7 +2,6 @@ import { useState } from "react";
 import { authAPI } from "../services/api";
 
 export default function GoogleSignInButton({ returnTo = "/", mode = "sign-in" }) {
-  const previewMode = import.meta.env.VITE_PREVIEW_MODE === "true";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,8 +20,6 @@ export default function GoogleSignInButton({ returnTo = "/", mode = "sign-in" })
       setBusy(false);
     }
   };
-
-  if (previewMode) return null;
 
   return (
     <div className="mt-4">

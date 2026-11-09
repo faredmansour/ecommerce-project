@@ -81,13 +81,9 @@ function App() {
             <Route
               path="/checkout"
               element={
-                import.meta.env.VITE_PREVIEW_MODE === "true"
-                  ? <CheckoutPage />
-                  : (
-                    <ProtectedRoute requireCartSync>
-                      <CheckoutPage />
-                    </ProtectedRoute>
-                  )
+                <ProtectedRoute requireCartSync>
+                  <CheckoutPage />
+                </ProtectedRoute>
               }
             />
             <Route

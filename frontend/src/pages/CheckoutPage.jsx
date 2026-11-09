@@ -31,26 +31,6 @@ function getProductId(item) {
 }
 
 export default function CheckoutPage() {
-  if (import.meta.env.VITE_PREVIEW_MODE === "true") {
-    return (
-      <div className="mx-auto max-w-content px-4 py-16">
-        <section role="status" className="mx-auto max-w-xl rounded-lg border border-state-warning-border bg-state-warning-bg p-6 text-center sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-state-warning">Preview experience</p>
-          <h1 className="mt-2 font-display text-2xl font-bold text-ink dark:text-white">Checkout is unavailable</h1>
-          <p className="mt-3 text-sm leading-6 text-muted">
-            This Preview store is for browsing only. Orders, Cash on Delivery, and payments are disabled; your cart remains available.
-          </p>
-          <Link to="/cart" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-5 py-2.5 font-semibold text-brand-fg hover:bg-brand-hover">
-            Return to cart
-          </Link>
-        </section>
-      </div>
-    );
-  }
-  return <CheckoutFlow />;
-}
-
-function CheckoutFlow() {
   const { isAuthenticated, user } = useAuth();
   const { addItem, refreshCart } = useCart();
   const navigate = useNavigate();

@@ -95,7 +95,7 @@ function OrderSummary({ total, shipping, needsAttention, onCheckout, mobile = fa
         onClick={onCheckout}
         className={mobile ? "min-h-12 w-full" : "hidden min-h-12 w-full lg:inline-flex"}
       >
-        {import.meta.env.VITE_PREVIEW_MODE === "true" ? "Preview checkout info" : "Checkout"}<ArrowRight size={18} aria-hidden="true" />
+        Checkout<ArrowRight size={18} aria-hidden="true" />
       </Button>
       {!mobile && (
         <Link to="/category" className="mt-3 hidden min-h-11 items-center justify-center text-sm font-medium text-muted transition-colors duration-200 hover:text-brand lg:flex">

@@ -29,7 +29,7 @@ const getOrderById = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
-    if (process.env.PREVIEW_MODE === "true") {
+    if (process.env.NODE_ENV === "production" && process.env.PREVIEW_MODE === "true") {
       return res.status(403).json({ status: "fail", code: "PREVIEW_ORDERS_DISABLED", message: "This is a demonstration store. Real orders are disabled." });
     }
     if (req.user.role === "admin") {

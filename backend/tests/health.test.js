@@ -36,6 +36,20 @@ describe("GET /health", () => {
       statusSpy.mockRestore();
     }
   });
+
+  it("does not require the payment webhook worker in Preview mode", async () => {
+    const originalPreviewMode = process.env.PREVIEW_MODE;
+    process.env.PREVIEW_MODE = "true";
+    try {
+      const res = await request(app).get("/health");
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe("ok");
+      expect(res.body.paymentWebhookWorker.state).toBe("disabled");
+    } finally {
+      if (originalPreviewMode === undefined) delete process.env.PREVIEW_MODE;
+      else process.env.PREVIEW_MODE = originalPreviewMode;
+    }
+  });
 });
 
 describe("GET /api/docs.json", () => {

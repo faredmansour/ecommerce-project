@@ -1,10 +1,12 @@
 services:
   frontend:
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to the ECR registry URI}/alfredo-frontend:${IMAGE_TAG:?Set IMAGE_TAG to an immutable git commit SHA}
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ""
+        VITE_PREVIEW_MODE: "true"
     container_name: alfredo-frontend
     restart: unless-stopped
     ports:
@@ -13,6 +15,7 @@ services:
       backend:
         condition: service_healthy
   backend:
+    image: ${ECR_REGISTRY:?Set ECR_REGISTRY to the ECR registry URI}/alfredo-backend:${IMAGE_TAG:?Set IMAGE_TAG to an immutable git commit SHA}
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -25,7 +28,6 @@ services:
       PAYMENT_WEBHOOK_SHUTDOWN_TIMEOUT_MS: 10000
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
       DB_URL: ${DB_URL:?Set DB_URL to a dedicated preview database}
-      REDIS_URL: redis://cache:6379
       CLIENT_URL: ${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL}
       FRONTEND_URL: ${PUBLIC_SITE_URL:?Set PUBLIC_SITE_URL}
       PAYMOB_ENVIRONMENT: TEST
@@ -33,28 +35,9 @@ services:
       PAYMOB_TEST_TRANSACTION_INQUIRY_ENABLED: "false"
     expose:
       - "8000"
-    depends_on:
-      cache:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 30s
-  cache:
-    image: redis:7-alpine
-    container_name: alfredo-redis
-    restart: unless-stopped
-    expose:
-      - "6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    volumes:
-      - redis_data:/data
-volumes:
-  redis_data:
-    driver: local

@@ -1,9 +1,9 @@
 name: Ecommerce CI
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, preview-aws-setup]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, preview-aws-setup]
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -68,6 +68,7 @@ jobs:
           push: false
           build-args: |
             VITE_API_URL=
+            VITE_PREVIEW_MODE=true
           tags: alfredo-frontend:ci
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend

@@ -11,6 +11,7 @@ const {
   createApiServerLifecycle,
   registerShutdownSignalHandlers,
 } = require("./services/apiServerLifecycle");
+const { isPreviewMode } = require("./middlewares/previewMode");
 
 const port = process.env.PORT || 8000;
 const shutdownTimeoutMs = process.env.PAYMENT_WEBHOOK_SHUTDOWN_TIMEOUT_MS === undefined
@@ -27,6 +28,15 @@ function safeErrorCode(error, fallback) {
 
 function start() {
   if (lifecycleInstance) return lifecycleInstance;
+
+  const workerRuntime = isPreviewMode()
+    ? {
+      start: async () => {},
+      stop: async () => ({ timedOut: false, unfinishedCount: 0 }),
+      waitForIdle: async () => {},
+      getStatus: () => ({ state: "disabled", recoveryActive: false, activeEventCount: 0 }),
+    }
+    : webhookService.queue.runtime;
 
   const lifecycle = createApiServerLifecycle({
     connectDatabase: async () => {
@@ -49,7 +59,7 @@ function start() {
     connectOptionalServices: async () => {
       if (process.env.REDIS_URL) await connectRedis();
     },
-    workerRuntime: webhookService.queue.runtime,
+    workerRuntime,
     requestLifecycle: app.requestLifecycle,
     databaseOperationRegistry: app.databaseOperationRegistry,
     listen: () => app.listen(port, () => {

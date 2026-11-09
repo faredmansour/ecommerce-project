@@ -226,6 +226,9 @@ describe("Apple OIDC authentication", () => {
       email: "apple-user@example.com",
       emailVerified: true,
     });
+    const transaction = await OAuthTransaction.findOne({ provider: "apple", intent: "link" });
+    expect(transaction.user.toString()).toBe(owner._id.toString());
+    expect(transaction.authVersion).toBe(owner.authVersion || 0);
     const linked = await request(app).get("/api/auth/apple/callback")
       .set("Cookie", cookie)
       .query({ state, code: "apple-authorization-code" });

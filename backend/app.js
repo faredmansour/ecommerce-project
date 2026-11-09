@@ -32,6 +32,7 @@ const brandRouter = require("./routers/brandRouter");
 const adminRouter = require("./routers/adminRouter");
 const pricingRouter = require("./routers/pricingRouter");
 const { webhookService } = require("./controllers/paymentWebhookController");
+const { blockInPreview, blockMutationsInPreview, isPreviewMode } = require("./middlewares/previewMode");
 
 const app = express();
 app.use(requestContext);
@@ -128,8 +129,10 @@ app.use((req, res, next) => {
 app.get("/health", (req, res) => {
   const dbStates = ["disconnected", "connected", "connecting", "disconnecting"];
   const db = dbStates[mongoose.connection.readyState] || "unknown";
-  const workerStatus = webhookService.queue.getStatus();
-  const healthy = db === "connected" && workerStatus.state === "running";
+  const workerStatus = isPreviewMode()
+    ? { state: "disabled", recoveryActive: false, activeEventCount: 0 }
+    : webhookService.queue.getStatus();
+  const healthy = db === "connected" && (isPreviewMode() || workerStatus.state === "running");
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "ok" : "degraded",
     uptime: process.uptime(),
@@ -147,6 +150,10 @@ app.get("/api/docs.json", (req, res) => res.json(swaggerSpec));
 app.use("/uploadimage", express.static("uploadimage"));
 app.use("/api", uploadRouter);
 
+app.use("/api/auth/google", blockInPreview("Google authentication"));
+app.use("/api/auth/apple", blockInPreview("Apple authentication"));
+app.use("/api/orders", blockMutationsInPreview("Order creation and management"));
+app.use("/api/payments", blockInPreview("Payments"));
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
@@ -156,7 +163,7 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/coupons", couponRouter);
-app.use("/api/payments/webhooks", paymentWebhookRouter);
+app.use("/api/payments/webhooks", blockInPreview("Payment webhooks"), paymentWebhookRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/pricing", pricingRouter);
 app.use("/api/admin", adminRouter);

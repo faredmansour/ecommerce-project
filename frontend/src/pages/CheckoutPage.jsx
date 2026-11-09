@@ -367,6 +367,7 @@ export default function CheckoutPage() {
         <h1 className="mt-1 font-display text-2xl font-bold text-ink dark:text-white sm:text-3xl">Checkout</h1>
       </div>
       <CheckoutProgress currentStep={currentStep} />
+      <p role="status" className="mt-4 rounded-md border border-state-warning-border bg-state-warning-bg px-4 py-3 text-sm text-state-warning">Preview store: checkout is for demonstration only. Orders, Cash on Delivery, and live payments are disabled.</p>
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
         <main className="min-w-0 space-y-5">
@@ -455,11 +456,11 @@ export default function CheckoutPage() {
             <Button
               type="button"
               onClick={handlePlaceOrder}
-              disabled={placing}
+              disabled={true}
               className="min-h-12 w-full"
             >
               {placing && <Loader2 size={16} className="animate-spin" />}
-              {paymentMethod === "card" ? "Continue to secure payment" : "Place COD order"} — Est. {formatCheckoutPrice(grandTotal)}
+              Preview checkout disabled — Est. {formatCheckoutPrice(grandTotal)}
             </Button>
           </section>
         </main>

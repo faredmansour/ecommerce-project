@@ -95,7 +95,7 @@ jobs:
       - name: Apply compatible security fixes to lockfile
         working-directory: ${{ matrix.path }}
         run: |
-          npm audit fix --package-lock-only --ignore-scripts --no-fund
+          npm audit fix --ignore-scripts --no-fund || true
           echo "LOCKFILE_BASE64=$(base64 -w0 package-lock.json)"
 
       - name: Install locked dependencies

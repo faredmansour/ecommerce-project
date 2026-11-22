@@ -2,7 +2,7 @@ name: Ecommerce CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feat/aws-testlab-deployment]
   pull_request:
     branches: [main, master]
 

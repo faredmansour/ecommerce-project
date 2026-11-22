@@ -58,6 +58,7 @@ async function setupPricedProduct({ priceMinor = 2499, stock = 5, status = "acti
     email: `order-integrity-${new mongoose.Types.ObjectId()}@example.com`,
     password: "Passw0rd!",
     role: "user",
+    emailVerified: true,
   });
   const token = jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, { expiresIn: "15m" });
   return { product, token };

@@ -92,6 +92,12 @@ jobs:
       - name: Pin npm
         run: npm install --global npm@11.6.2
 
+      - name: Apply compatible security fixes to lockfile
+        working-directory: ${{ matrix.path }}
+        run: |
+          npm audit fix --package-lock-only --ignore-scripts --no-fund
+          echo "LOCKFILE_BASE64=$(base64 -w0 package-lock.json)"
+
       - name: Install locked dependencies
         working-directory: ${{ matrix.path }}
         run: npm ci

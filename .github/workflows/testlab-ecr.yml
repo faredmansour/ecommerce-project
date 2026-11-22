@@ -2,12 +2,6 @@ name: Build and push E-commerce images to Test Lab ECR
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/aws-testlab-deployment]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - ".github/workflows/testlab-ecr.yml"
 
 permissions:
   contents: read

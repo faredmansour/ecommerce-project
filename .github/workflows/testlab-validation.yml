@@ -42,30 +42,6 @@ jobs:
         working-directory: backend
         run: npm test -- --runInBand
 
-  lockfile-diagnostic:
-    name: Diagnose and regenerate backend lockfile
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Pin npm
-        run: npm install --global npm@11.6.2
-
-      - name: Regenerate lockfile in the runner only
-        working-directory: backend
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          echo "## Regenerated backend lockfile diff"
-          git -C "$GITHUB_WORKSPACE" diff --no-ext-diff -- backend/package-lock.json
-          echo "LOCKFILE_BASE64=$(base64 -w0 package-lock.json)"
-          npm ci
-
   frontend:
     name: Frontend install and build
     runs-on: ubuntu-latest

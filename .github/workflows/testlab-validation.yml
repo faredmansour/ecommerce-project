@@ -69,6 +69,63 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  dependency-audit:
+    name: Dependency security audit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: backend
+            path: backend
+          - project: frontend
+            path: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pin npm
+        run: npm install --global npm@11.6.2
+
+      - name: Install locked dependencies
+        working-directory: ${{ matrix.path }}
+        run: npm ci
+
+      - name: Report advisories without changing dependencies
+        working-directory: ${{ matrix.path }}
+        env:
+          AUDIT_FILE: ${{ runner.temp }}/${{ matrix.project }}-audit.json
+        run: |
+          npm audit --json > "$AUDIT_FILE" || true
+          node -e '
+            const fs = require("node:fs");
+            const audit = JSON.parse(fs.readFileSync(process.env.AUDIT_FILE, "utf8"));
+            const entries = Object.entries(audit.vulnerabilities || {});
+            console.log("Project:", process.env.PROJECT_NAME || "dependency audit");
+            console.log("Counts:", JSON.stringify(audit.metadata?.vulnerabilities || {}));
+            for (const [name, item] of entries) {
+              console.log(JSON.stringify({
+                name,
+                severity: item.severity,
+                direct: item.isDirect,
+                range: item.range,
+                via: (item.via || []).map((entry) =>
+                  typeof entry === "string" ? entry : {
+                    name: entry.name,
+                    title: entry.title,
+                    range: entry.range,
+                    url: entry.url
+                  }),
+                fixAvailable: item.fixAvailable
+              }));
+            }
+          '
+
   docker:
     name: Build Docker images without pushing
     runs-on: ubuntu-latest

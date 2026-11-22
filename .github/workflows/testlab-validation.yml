@@ -28,8 +28,9 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Show toolchain
+      - name: Pin npm version used by container builds
         run: |
+          npm install --global npm@11.6.2
           node --version
           npm --version
 

@@ -9,7 +9,7 @@ import ProductImage from "../components/ProductImage";
 
 const THRESHOLD = siteConfig.freeShippingThreshold;
 const FEE = siteConfig.shippingFee;
-const BACKEND = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/_/backend" : "http://localhost:8000");
+const BACKEND = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 function getImageUrl(image) {
   if (!image) return "";

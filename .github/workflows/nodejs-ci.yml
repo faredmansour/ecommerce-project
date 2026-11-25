@@ -2,7 +2,7 @@ name: Ecommerce CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feat/aws-testlab-deployment]
   pull_request:
     branches: [main, master]
 
@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Run tests
         working-directory: backend
@@ -86,3 +86,28 @@ jobs:
           tags: ecommerce-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+  testlab-docker-build:
+    name: Test Lab Docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: ecommerce-backend:testlab-smoke
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          build-args: |
+            VITE_API_URL=
+          tags: ecommerce-frontend:testlab-smoke

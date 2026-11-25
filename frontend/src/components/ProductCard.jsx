@@ -7,7 +7,7 @@ import { wishlistAPI } from "../services/api";
 import { Badge, Button, PriceDisplay, ProductRating } from "./ui";
 import ProductImage from "./ProductImage";
 
-const BACKEND = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BACKEND = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 function getCategoryName(category) {
   if (!category) return "";
